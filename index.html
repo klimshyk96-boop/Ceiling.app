@@ -1,0 +1,3250 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Стеля">
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;:&quot;Конструктор натяжної стелі&quot;,
+  &quot;short_name&quot;:&quot;Стеля&quot;,
+  &quot;start_url&quot;:&quot;.&quot;,
+  &quot;display&quot;:&quot;standalone&quot;,
+  &quot;background_color&quot;:&quot;#f0f4ff&quot;,
+  &quot;theme_color&quot;:&quot;#2563eb&quot;,
+  &quot;orientation&quot;:&quot;portrait&quot;,
+  &quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%232563eb'/%3E%3Crect x='32' y='32' width='128' height='128' rx='12' fill='none' stroke='white' stroke-width='12'/%3E%3Cline x1='32' y1='96' x2='160' y2='96' stroke='white' stroke-width='10'/%3E%3Cline x1='96' y1='32' x2='96' y2='160' stroke='white' stroke-width='10'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+<title>Конструктор натяжної стелі v30 — компактні елементи</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── AUTH SCREEN ─────────────────────────────────── */
+#authScreen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#1e3a8a 0%,#312e81 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#authScreen.hidden{display:none}
+.auth-card{
+  background:#fff;border-radius:28px;padding:32px 28px;
+  width:100%;max-width:360px;
+  box-shadow:0 24px 60px rgba(0,0,0,.3);
+}
+.auth-logo{
+  width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,#2563eb,#6366f1);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  box-shadow:0 8px 20px rgba(99,102,241,.4);
+}
+.auth-title{text-align:center;font-size:1.3rem;font-weight:800;color:#1e293b;margin-bottom:4px}
+.auth-sub{text-align:center;font-size:13px;color:#94a3b8;margin-bottom:24px}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:11px;font-weight:700;color:#64748b;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.auth-field input{
+  width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:12px;
+  font-size:16px;font-family:inherit;transition:border-color .15s;
+  box-sizing:border-box;
+}
+.auth-field input:focus{outline:none;border-color:#6366f1}
+.auth-btn{
+  width:100%;padding:14px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,#2563eb,#6366f1);
+  color:#fff;font-size:16px;font-weight:700;cursor:pointer;
+  box-shadow:0 6px 18px rgba(37,99,235,.35);
+  transition:transform .12s;margin-top:4px;
+}
+.auth-btn:active{transform:scale(.98)}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:#64748b}
+.auth-toggle a{color:#2563eb;font-weight:700;cursor:pointer;text-decoration:none}
+.auth-error{background:#fee2e2;color:#991b1b;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;display:none}
+/* sync badge */
+#syncBadge{
+  position:fixed;bottom:16px;right:16px;z-index:500;
+  background:#1e293b;color:#fff;border-radius:99px;
+  padding:6px 12px;font-size:12px;font-weight:700;
+  display:none;align-items:center;gap:6px;
+  box-shadow:0 4px 14px rgba(0,0,0,.2);
+}
+#syncBadge.show{display:flex}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+/* user pill in header */
+#userPill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);
+  border-radius:12px;padding:6px 10px;cursor:pointer;
+  font-size:11px;font-weight:700;color:#1e293b;
+  backdrop-filter:blur(4px);
+}
+</style>
+*{box-sizing:border-box;color-scheme:light}
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+margin:0;padding:16px;
+background:#f0f4ff;
+background-image:
+  radial-gradient(ellipse at 20% 0%,rgba(99,102,241,.12) 0%,transparent 55%),
+  radial-gradient(ellipse at 80% 100%,rgba(14,165,233,.10) 0%,transparent 55%);
+min-height:100vh;
+color:#172033;
+}
+
+/* ── HEADER ─────────────────────────────────── */
+.app-header{
+display:flex;align-items:center;justify-content:center;gap:10px;
+margin:0 0 20px;
+}
+.app-header-icon{
+width:38px;height:38px;border-radius:12px;
+background:linear-gradient(135deg,#2563eb,#6366f1);
+display:flex;align-items:center;justify-content:center;
+box-shadow:0 4px 12px rgba(99,102,241,.35);
+flex-shrink:0;
+}
+.app-header-text h2{
+margin:0;font-size:1.25rem;font-weight:800;
+background:linear-gradient(135deg,#1e3a8a,#6366f1);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.app-header-text .app-version{
+font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;
+}
+
+/* ── LAYOUT ──────────────────────────────────── */
+#main-area{max-width:1200px;margin:auto;display:flex;flex-direction:column;gap:14px}
+.top-row{display:flex;gap:14px;align-items:flex-start}
+
+/* ── CANVAS ──────────────────────────────────── */
+.canvas-container{
+flex:1;background:#fff;border-radius:24px;padding:14px;
+box-shadow:0 2px 0 rgba(255,255,255,.8) inset,
+           0 12px 32px rgba(15,23,42,.10);
+position:relative;
+}
+canvas{
+width:100%;border:none;border-radius:16px;
+background:#f8faff;
+box-shadow:inset 0 0 0 1px rgba(99,102,241,.12);
+}
+
+/* ── SIDE PANEL ──────────────────────────────── */
+.panel-column{width:260px;display:flex;flex-direction:column;gap:12px}
+.table-scroll,.info-box{
+background:#fff;border:none;border-radius:20px;
+box-shadow:0 2px 0 rgba(255,255,255,.8) inset,
+           0 6px 20px rgba(15,23,42,.07);
+}
+.table-scroll{max-height:260px;overflow:auto}
+.info-box{padding:14px}
+.info-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:6px}
+
+/* ── TABLE ───────────────────────────────────── */
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px;font-size:12px;border-bottom:1px solid #f1f5f9}
+th{background:#f8fafc;font-size:11px;color:#64748b;font-weight:700;letter-spacing:.05em}
+input[type=number]{
+width:100%;padding:8px;border-radius:10px;border:1.5px solid #e2e8f0;
+font-weight:700;text-align:center;transition:border-color .15s;
+}
+input[type=number]:focus{outline:none;border-color:#6366f1}
+input.filled{background:#f0fdf4!important;border-color:#22c55e!important}
+
+/* ── STAT CARDS ──────────────────────────────── */
+.stat-card{
+padding:12px 14px;border-radius:16px;
+transition:transform .15s;
+}
+.stat-card:hover{transform:translateY(-1px)}
+.stat-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.stat-value{font-size:24px;font-weight:800;line-height:1}
+.stat-unit{font-size:13px;font-weight:600;opacity:.6}
+.stat-area{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8}
+.stat-per{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);color:#0f766e}
+.stat-in{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#15803d}
+.stat-out{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#c2410c}
+
+/* ── TILE BUTTONS ────────────────────────────── */
+.btn-figures,.btn-grid{gap:10px}
+.btn-figures{display:grid;grid-template-columns:1fr 1fr}
+.btn-grid{display:grid;grid-template-columns:repeat(2,1fr)}
+button{
+border:none;border-radius:14px;padding:13px 10px;
+font-weight:700;color:#fff;
+background:linear-gradient(135deg,#2563eb,#3b82f6);
+box-shadow:0 4px 14px rgba(37,99,235,.25);
+cursor:pointer;
+transition:transform .12s,box-shadow .12s;
+}
+button:active{transform:scale(.97)}
+button.active{background:linear-gradient(135deg,#10b981,#34d399)}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);grid-column:span 2}
+
+.tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.tile-btn{
+border:none;border-radius:20px;padding:16px 14px;text-align:left;
+font-weight:700;color:#1e293b;
+box-shadow:0 2px 0 rgba(255,255,255,.9) inset,
+           0 6px 18px rgba(0,0,0,.07);
+transition:transform .13s,box-shadow .13s;
+cursor:pointer;
+}
+.tile-btn:hover{transform:translateY(-2px);box-shadow:0 2px 0 rgba(255,255,255,.9) inset, 0 10px 24px rgba(0,0,0,.11)}
+.tile-btn:active{transform:scale(.97)}
+.tile-icon{display:flex;align-items:center;justify-content:center;
+width:40px;height:40px;border-radius:12px;margin-bottom:10px;
+}
+.tile-btn-label{font-size:14px;font-weight:700;line-height:1.2}
+.tile-sub{font-size:11px;opacity:.6;font-weight:600;margin-top:2px}
+
+.tile-blue{background:linear-gradient(145deg,#e0eaff,#f0f5ff)}
+.tile-blue .tile-icon{background:rgba(99,102,241,.15);color:#4f46e5}
+.tile-cyan{background:linear-gradient(145deg,#d4f4ff,#eafbff)}
+.tile-cyan .tile-icon{background:rgba(6,182,212,.15);color:#0891b2}
+.tile-purple{background:linear-gradient(145deg,#ede9ff,#f5f3ff)}
+.tile-purple .tile-icon{background:rgba(139,92,246,.15);color:#7c3aed}
+.tile-green{background:linear-gradient(145deg,#d9fce8,#edfff4)}
+.tile-green .tile-icon{background:rgba(34,197,94,.15);color:#16a34a}
+.tile-red{background:linear-gradient(145deg,#ffe4e4,#fff2f2)}
+.tile-red .tile-icon{background:rgba(239,68,68,.15);color:#dc2626}
+
+/* ── MODAL ───────────────────────────────────── */
+.status-badge{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.status-green{background:#dcfce7;color:#166534}
+.status-yellow{background:#fef3c7;color:#92400e}
+.status-red{background:#fee2e2;color:#991b1b}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{
+background:#fff;border-radius:28px;padding:24px;width:320px;
+box-shadow:0 24px 60px rgba(0,0,0,.18);
+}
+.modal h3{margin:0 0 16px;font-size:1.1rem;font-weight:800;color:#1e293b}
+.modal label{display:block;font-size:12px;font-weight:700;color:#64748b;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.05em}
+.modal-btns{display:flex;gap:10px;margin-top:18px}
+.btn-cancel{background:linear-gradient(135deg,#e2e8f0,#f1f5f9)!important;color:#475569!important;box-shadow:none!important}
+
+.zoom-controls{
+position:absolute;
+right:14px;
+bottom:14px;
+display:flex;
+flex-direction:column;
+gap:1px;
+z-index:20;
+background:rgba(255,255,255,0.92);
+backdrop-filter:blur(12px);
+-webkit-backdrop-filter:blur(12px);
+border-radius:18px;
+box-shadow:0 8px 28px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.06);
+overflow:hidden;
+}
+.zoom-btn{
+width:52px;
+height:52px;
+border-radius:0;
+border:none;
+border-bottom:1px solid rgba(0,0,0,.07);
+font-size:20px;
+font-weight:600;
+cursor:pointer;
+background:transparent;
+color:#1e293b;
+box-shadow:none;
+transition:background .15s;
+display:flex;align-items:center;justify-content:center;
+}
+.zoom-btn:last-child{border-bottom:none;}
+.zoom-btn:active{background:rgba(0,0,0,.08);}
+.zoom-btn:hover{background:rgba(0,0,0,.04);}
+.canvas-container{position:relative;}
+
+@media(max-width:900px){
+.top-row{flex-direction:column}
+.panel-column{width:100%}
+}
+
+/* ── ZOOM CONTROLS ───────────────────────────── */
+
+
+
+
+body:not(.elem-manage) .grp-del,
+body:not(.elem-manage) .em-del,
+body:not(.elem-manage) .grp-edit,
+body:not(.elem-manage) .em-edit{display:none!important;}
+.elem-manage .grp-del,
+.elem-manage .em-del,
+.elem-manage .grp-edit,
+.elem-manage .em-edit{display:inline-flex!important;}
+</style>
+
+</head>
+<body>
+
+<!-- ── ЕКРАН АВТОРИЗАЦІЇ ─────────────────────────── -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+      </svg>
+    </div>
+    <div class="auth-title">Конструктор стелі</div>
+    <div class="auth-sub" id="authSubtitle">Вхід для замірника</div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-field" id="authNameField" style="display:none">
+      <label>Ім'я</label>
+      <input type="text" id="authName" placeholder="Ваше ім'я">
+    </div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="email@example.com" inputmode="email">
+    </div>
+    <div class="auth-field">
+      <label>Пароль</label>
+      <input type="password" id="authPassword" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter') doAuth()">
+    </div>
+    <button class="auth-btn" id="authBtn" onclick="doAuth()">Увійти</button>
+    <div class="auth-toggle">
+      <span id="authToggleText">Немає акаунта?</span>
+      <a onclick="toggleAuthMode()"> Реєстрація</a>
+    </div>
+  </div>
+</div>
+
+<!-- sync badge -->
+<div id="syncBadge"><span class="spin">⟳</span> <span id="syncText">Синхронізація...</span></div>
+
+<header class="app-header">
+  <div class="app-header-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+    </svg>
+  </div>
+  <div class="app-header-text" style="flex:1">
+    <h2>Конструктор натяжної стелі</h2>
+    <div class="app-version">версія 30 — компактні елементи</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+    <div id="userPill" onclick="openProjectsModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span id="userPillName">...</span>
+    </div>
+    <div id="userPillCloud" style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:3px">
+      <span id="cloudStatus">☁️ підключення...</span>
+    </div>
+  </div>
+</header>
+
+<div id="main-area">
+
+<div class="tools-grid">
+<button class="tile-btn tile-blue" onclick="openRectModal()">
+  <div class="tile-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>
+  </div>
+  <div class="tile-btn-label">Прямокутник</div>
+  <div class="tile-sub">Швидка кімната</div>
+</button>
+<button class="tile-btn tile-cyan" onclick="openCircleModal()">
+  <div class="tile-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>
+  </div>
+  <div class="tile-btn-label">Коло</div>
+  <div class="tile-sub">Круглий елемент</div>
+</button>
+</div>
+
+  <div class="top-row">
+    <div class="canvas-container">
+      <canvas id="cv" width="750" height="750"></canvas>
+<div class="zoom-controls">
+<button class="zoom-btn" onclick="zoomIn()" title="Збільшити">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+</button>
+<button class="zoom-btn" onclick="zoomOut()" title="Зменшити">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+</button>
+<button class="zoom-btn" onclick="resetZoom()" title="Скинути вид">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+</button>
+<button class="zoom-btn" onclick="undoPoint()" title="Скасувати точку">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+</button>
+</div>
+    </div>
+
+    <div class="panel-column">
+      <div class="table-scroll" style="display:none;">
+        <div id="tbl">
+          <table><tr><td style="color:#8e8e93; padding: 10px; text-align:center; font-size:11px;">Натискайте на екран, щоб ставити кути (прямі та скоси)</td></tr></table>
+        </div>
+      </div>
+      
+      
+
+      <div class="info-box">
+        <div class="info-title">Діагоналі</div>
+        <div id="diagList" style="color:#3a3a3c;max-height:120px;overflow-y:auto;">немає</div>
+      </div>
+
+      
+<div class="info-box" style="background:#fff;">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+<div class="stat-card stat-area">
+  <div class="stat-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> ПЛОЩА</div>
+  <div class="stat-value"><span id="area">0.00</span><span class="stat-unit"> м²</span></div>
+</div>
+<div class="stat-card stat-per">
+  <div class="stat-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg> ПЕРИМЕТР</div>
+  <div class="stat-value"><span id="per">0.00</span><span class="stat-unit"> м</span></div>
+</div>
+<div class="stat-card stat-in">
+  <div class="stat-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg> ВНУТР. КУТИ</div>
+  <div class="stat-value"><span id="inCorners">0</span></div>
+</div>
+<div class="stat-card stat-out">
+  <div class="stat-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg> ЗОВН. КУТИ</div>
+  <div class="stat-value"><span id="outCorners">0</span></div>
+</div>
+</div>
+</div>
+    </div>
+  </div>
+
+  
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:4px">
+<button class="tile-btn tile-purple" id="diagBtn" onclick="toggleDiag()">
+  <div class="tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="20" x2="20" y2="4"/><polyline points="14 4 20 4 20 10"/></svg></div>
+  <div class="tile-btn-label">Діагональ</div>
+  <div class="tile-sub">Замір</div>
+</button>
+<button class="tile-btn tile-cyan" onclick="autoDiagonals()">
+  <div class="tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg></div>
+  <div class="tile-btn-label">Діагоналі</div>
+  <div class="tile-sub">Вибір пар</div>
+</button>
+<button class="tile-btn tile-green" onclick="openSideInputModal()">
+  <div class="tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
+  <div class="tile-btn-label">Розміри</div>
+  <div class="tile-sub">AB, BC…</div>
+</button>
+<button class="tile-btn tile-blue" onclick="openSaveProjectModal()">
+  <div class="tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
+  <div class="tile-btn-label">В проєкти</div>
+  <div class="tile-sub">Зберегти</div>
+</button>
+<button class="tile-btn tile-green" onclick="saveToPhone()">
+  <div class="tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+  <div class="tile-btn-label">Звіт</div>
+  <div class="tile-sub">Картинка</div>
+</button>
+<button class="tile-btn" id="elemTileBtn" onclick="openElementsModal()" style="background:linear-gradient(145deg,#fff4ed,#fff8f5)">
+  <div class="tile-icon" style="background:rgba(234,88,12,.13);color:#ea580c">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </div>
+  <div class="tile-btn-label" style="color:#1e293b">Елементи <span id="elemBadge" style="display:none;background:#ea580c;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:1px 6px;margin-left:2px;vertical-align:middle">0</span></div>
+  <div class="tile-sub" style="color:#64748b">Профілі, вставки…</div>
+</button>
+<button class="tile-btn tile-red" onclick="resetAll()" style="grid-column:span 3">
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+    <div class="tile-icon" style="margin-bottom:0;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></div>
+    <div><div class="tile-btn-label">Очистити</div><div class="tile-sub">Новий проєкт</div></div>
+  </div>
+</button>
+</div>
+
+
+</div>
+
+<!-- Модальне вікно: Прямокутник -->
+<div class="modal-overlay" id="rectModal">
+  <div class="modal">
+    <h3>▭ Прямокутник</h3>
+    <label>Ширина (см)</label>
+    <input type="number" inputmode="decimal" id="rectW" placeholder="напр. 350">
+    <label>Висота / Довжина (см)</label>
+    <input type="number" inputmode="decimal" id="rectH" placeholder="напр. 450">
+    <div style="display:flex;gap:8px;margin:10px 0">
+<button type="button" onclick="focusPrevSide()">◀ Попередній</button>
+<button type="button" onclick="focusNextSide()">Наступний ▶</button>
+</div>
+<div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('rectModal')">Скасувати</button>
+      <button onclick="applyRect()">✓ Побудувати</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно: Коло -->
+<div class="modal-overlay" id="circleModal">
+  <div class="modal">
+    <h3>⬤ Коло</h3>
+    <label>Діаметр (см)</label>
+    <input type="number" inputmode="decimal" id="circleDiam" placeholder="напр. 300">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('circleModal')">Скасувати</button>
+      <button onclick="applyCircle()">✓ Побудувати</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ── Надійні заміни alert()/confirm() ──────────────────
+// У цьому WebView-перегляді системні діалоги (alert/confirm) можуть
+// не показуватись або "тихо" нічого не робити, тож скрізь у застосунку
+// замінюємо їх на власні елементи інтерфейсу.
+
+// Заміна alert(): коротке сповіщення внизу екрана.
+function showToast(msg, ms){
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
+    +'max-width:88vw;background:#1e293b;color:#fff;padding:10px 18px;border-radius:14px;'
+    +'font-weight:700;font-size:13.5px;text-align:center;z-index:99999;'
+    +'box-shadow:0 6px 20px rgba(0,0,0,.25);';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), ms||2400);
+}
+
+// Заміна confirm(): перший тап по кнопці просить підтвердження
+// (змінює її текст), другий тап (упродовж 4с) виконує дію.
+function confirmTap(btn, confirmText, onConfirm){
+  if(!btn){ onConfirm(); return; }
+  if(btn.dataset.confirmArmed !== '1'){
+    btn.dataset.confirmArmed = '1';
+    btn.dataset.origText = btn.dataset.origText || btn.innerHTML;
+    btn.innerHTML = confirmText;
+    clearTimeout(btn._confirmTimer);
+    btn._confirmTimer = setTimeout(()=>{
+      btn.dataset.confirmArmed = '0';
+      btn.innerHTML = btn.dataset.origText;
+    }, 4000);
+    return;
+  }
+  clearTimeout(btn._confirmTimer);
+  btn.dataset.confirmArmed = '0';
+  btn.innerHTML = btn.dataset.origText;
+  onConfirm();
+}
+
+function autoOpenDimensionsAfterClose(){
+  setTimeout(()=>{
+    try{
+      if(typeof openSideInputModal==='function' && closed && pts.length>=3){
+        openSideInputModal();
+      }
+    }catch(e){}
+  },200);
+}
+
+function openSideInputModal(){
+  if(!closed || pts.length < 3){
+    showToast('Спочатку замкніть контур');
+    return;
+  }
+
+  let h='';
+  for(let i=0;i<pts.length;i++){
+    let j=(i+1)%pts.length;
+    let label=N(i)+N(j);
+    let val=lengths[i]||'';
+
+    h += `<div style="margin-bottom:10px">
+      <label style="display:block;font-weight:700;margin-bottom:4px">${label}</label>
+      <input type="number" inputmode="decimal" class="bulk-side-input"
+             data-i="${i}" value="${val}"
+             style="width:100%;padding:10px;border:1px solid #dbe4f0;border-radius:10px">
+    </div>`;
+  }
+
+  document.getElementById('sideInputsContainer').innerHTML=h;
+  document.getElementById('sideInputModal').classList.add('open');
+
+  setTimeout(()=>{
+    const first=document.querySelector('.bulk-side-input');
+    if(first){ currentSideIndex=0; first.focus(); }
+  },100);
+
+  document.querySelectorAll('.bulk-side-input').forEach((el,index,arr)=>{
+
+    function goNext(){
+      if(index < arr.length-1){
+        arr[index+1].focus();
+        arr[index+1].select();
+      }else{
+        // Очікуємо натискання кнопки Побудувати
+      }
+    }
+
+    el.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        goNext();
+      }
+    });
+
+    el.addEventListener('change',()=>{
+      setTimeout(goNext,50);
+    });
+  });
+}
+
+
+let currentSideIndex = 0;
+
+function focusPrevSide(){
+ const arr=[...document.querySelectorAll('.bulk-side-input')];
+ if(!arr.length) return;
+ currentSideIndex=Math.max(0,currentSideIndex-1);
+ arr[currentSideIndex].focus();
+}
+
+function focusNextSide(){
+ const arr=[...document.querySelectorAll('.bulk-side-input')];
+ if(!arr.length) return;
+ currentSideIndex=Math.min(arr.length-1,currentSideIndex+1);
+ arr[currentSideIndex].focus();
+}
+
+function applySideInputs(){
+  const inputs=[...document.querySelectorAll('.bulk-side-input')];
+
+  inputs.forEach(el=>{
+    const i=+el.dataset.i;
+    lengths[i]=parseFloat(el.value)||0;
+  });
+
+  document.querySelectorAll('input[data-i]').forEach(el=>{
+    const i=+el.dataset.i;
+    if(lengths[i]){
+      el.value=lengths[i];
+      el.classList.add('filled');
+    }
+  });
+
+  let per=lengths.reduce((a,b)=>a+(+b||0),0);
+  document.getElementById('per').textContent=(per/100).toFixed(2);
+
+  closeModal('sideInputModal');
+  rebuild();
+  saveState();
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+let viewScale = 1;
+let viewOffsetX = 0;
+let viewOffsetY = 0;
+let pinchStartDist = 0;
+let pinchStartScale = 1;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+
+let pts = [], lengths = [], realPts = [], notes = [];
+let closed = false, diagonalMode = false, triangleMode = false;
+let selectedPoint = null;
+let diagonals = []; let diagonalOverrides = {};
+let circleMode = false, circleDiamCm = 0;
+// dragIndex removed — vertex dragging disabled
+
+function saveState(){
+ localStorage.setItem('ceiling_v18', JSON.stringify({pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,diagonalOverrides,notes}));
+}
+function loadState(){
+ try{
+  const s=localStorage.getItem('ceiling_v18');
+  if(!s) return;
+  const d=JSON.parse(s);
+  pts=d.pts||[]; lengths=d.lengths||[]; realPts=d.realPts||[];
+  closed=!!d.closed; diagonals=d.diagonals||[]; diagonalOverrides=d.diagonalOverrides||{};
+  circleMode=!!d.circleMode; circleDiamCm=d.circleDiamCm||0;
+  notes=d.notes||[];
+  draw();
+ }catch(e){}
+}
+function undoPoint(){
+ if(closed || circleMode || pts.length===0) return;
+ pts.pop();
+ saveState();
+ draw();
+}
+
+function N(i) { return String.fromCharCode(64 + (i + 1)); }
+
+// ─── МОДАЛЬНІ ВІКНА ─────────────────────────────────────
+function openRectModal() {
+  if (closed || pts.length > 0) { showToast('Спочатку очистіть полотно (кнопка "Очистити все")'); return; }
+  document.getElementById('rectModal').classList.add('open');
+  setTimeout(() => document.getElementById('rectW').focus(), 100);
+}
+function openCircleModal() {
+  if (closed || pts.length > 0) { showToast('Спочатку очистіть полотно (кнопка "Очистити все")'); return; }
+  document.getElementById('circleModal').classList.add('open');
+  setTimeout(() => document.getElementById('circleDiam').focus(), 100);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ─── ПРЯМОКУТНИК ────────────────────────────────────────
+function applyRect() {
+  const w = parseFloat(document.getElementById('rectW').value);
+  const h = parseFloat(document.getElementById('rectH').value);
+  if (!w || !h || w <= 0 || h <= 0) { showToast('Введіть коректні розміри'); return; }
+  closeModal('rectModal');
+  resetAllSilent();
+
+  // Будуємо 4 точки прямокутника на canvas
+  const pad = 85, size = 580;
+  const scale = Math.min(size / w, size / h);
+  const cw = w * scale, ch = h * scale;
+  const ox = pad + (size - cw) / 2, oy = pad + (size - ch) / 2;
+
+  pts = [
+    {x: ox,      y: oy},
+    {x: ox + cw, y: oy},
+    {x: ox + cw, y: oy + ch},
+    {x: ox,      y: oy + ch}
+  ];
+
+  // Довжини сторін у см: AB=w, BC=h, CD=w, DA=h
+  lengths = [w, h, w, h];
+  realPts = [
+    {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
+  ];
+
+  closed = true; autoOpenDimensionsAfterClose();
+  circleMode = false;
+
+  // Показуємо таблицю розмірів
+  let labels = ['AB (ширина)', 'BC (висота)', 'CD (ширина)', 'DA (висота)'];
+  let h2 = '<table><thead><tr><th>Стор.</th><th>см</th></tr></thead><tbody>';
+  for (let i = 0; i < 4; i++) {
+    h2 += `<tr>
+      <td style="font-weight:bold;">${labels[i]}</td>
+      <td><input type="number" inputmode="decimal" data-i="${i}" value="${lengths[i]}" oninput="checkMark(this); saveLen(this)" onkeydown="nextInput(event,this)" class="filled"></td>
+    </tr>`;
+  }
+  h2 += '</tbody></table>';
+  document.getElementById('tbl').innerHTML = h2;
+
+  // Розраховуємо результати
+  const perimeter = 2 * (w + h);
+  const area = w * h;
+  document.getElementById('per').textContent = (perimeter / 100).toFixed(2);
+  document.getElementById('area').textContent = (area / 10000).toFixed(2);
+  document.getElementById('inCorners').textContent = '4';
+  document.getElementById('outCorners').textContent = '0';
+
+  // Діагональ прямокутника
+  const diag = Math.hypot(w, h);
+  document.getElementById('diagList').innerHTML = `<b>AC</b>=${diag.toFixed(0)}см`;
+
+  updateCornerCount();
+  draw();
+  updateChecks();
+  saveState();
+}
+
+// ─── КОЛО ────────────────────────────────────────────────
+function applyCircle() {
+  const diam = parseFloat(document.getElementById('circleDiam').value);
+  if (!diam || diam <= 0) { showToast('Введіть коректний діаметр'); return; }
+  closeModal('circleModal');
+  resetAllSilent();
+
+  circleDiamCm = diam;
+  circleMode = true;
+  closed = true; autoOpenDimensionsAfterClose();
+
+  const r = diam / 2;
+  const perimeter = Math.PI * diam;
+  const area = Math.PI * r * r;
+
+  document.getElementById('per').textContent = (perimeter / 100).toFixed(2);
+  document.getElementById('area').textContent = (area / 10000).toFixed(2);
+  document.getElementById('inCorners').textContent = '—';
+  document.getElementById('outCorners').textContent = '—';
+  document.getElementById('diagList').innerHTML = `<b>Діаметр</b>: ${diam} см`;
+
+  // Таблиця для кола
+  document.getElementById('tbl').innerHTML = `
+    <table>
+      <thead><tr><th>Параметр</th><th>Значення</th></tr></thead>
+      <tbody>
+        <tr><td>Діаметр</td><td><b>${diam} см</b></td></tr>
+        <tr><td>Радіус</td><td><b>${r.toFixed(1)} см</b></td></tr>
+        <tr><td>Периметр</td><td><b>${(perimeter/100).toFixed(2)} м</b></td></tr>
+        <tr><td>Площа</td><td><b>${(area/10000).toFixed(2)} м²</b></td></tr>
+      </tbody>
+    </table>`;
+
+  draw();
+}
+
+// ─── МАЛЮВАННЯ ───────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.save();
+  ctx.translate(viewOffsetX, viewOffsetY);
+  ctx.scale(viewScale, viewScale);
+
+  if (circleMode && circleDiamCm > 0) {
+    const cx = cv.width / 2, cy = cv.height / 2;
+    const r = Math.min(cv.width, cv.height) * 0.42;
+
+    // Заливка кола
+    ctx.fillStyle = 'rgba(0,113,227,0.07)';
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+
+    // Контур
+    ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+    // Діаметр (горизонтальна лінія)
+    ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Підпис діаметра
+    ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center';
+    ctx.fillText(`⌀ ${circleDiamCm} см`, cx, cy - 12);
+
+    // Радіус (вертикальна лінія-стрілка)
+    ctx.strokeStyle = '#0071e3'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - r); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#0071e3'; ctx.font = '14px Arial';
+    ctx.fillText(`r = ${(circleDiamCm/2).toFixed(1)} см`, cx + 36, cy - r/2);
+
+    // Центр
+    ctx.fillStyle = '#0071e3'; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.restore();
+    return;
+  }
+
+  if (!pts.length) return;
+
+  ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 3; ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (closed) ctx.closePath();
+  ctx.stroke();
+
+  ctx.font = "bold 18px Arial";
+  pts.forEach((p, i) => {
+    ctx.fillStyle = '#0071e3';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1d1d1f'; ctx.font='bold 28px Arial'; ctx.fillStyle='#111827'; ctx.fillText(N(i), p.x + 14, p.y - 14);
+
+    // Note icon
+    if(notes[i]){
+      ctx.font='16px Arial';
+      ctx.fillText('📝', p.x - 22, p.y - 14);
+    }
+
+    if(closed && pts.length >= 3){
+      const prev = pts[(i - 1 + pts.length) % pts.length];
+      const next = pts[(i + 1) % pts.length];
+      const v1 = {x: prev.x - p.x, y: prev.y - p.y};
+      const v2 = {x: next.x - p.x, y: next.y - p.y};
+      const len1 = Math.hypot(v1.x, v1.y);
+      const len2 = Math.hypot(v2.x, v2.y);
+
+      if(len1 > 0 && len2 > 0){
+        let cosA = (v1.x*v2.x + v1.y*v2.y)/(len1*len2);
+        cosA = Math.max(-1, Math.min(1, cosA));
+        const angle = Math.acos(cosA) * 180 / Math.PI;
+        const diff = Math.abs(angle - 90);
+
+        // — дуга кута —
+        const arcR = Math.min(28, len1 * 0.25, len2 * 0.25);
+        const a1 = Math.atan2(v1.y, v1.x);
+        const a2 = Math.atan2(v2.y, v2.x);
+
+        // колір дуги: зелений ≤1°, жовтий ≤3°, червоний >3°
+        let arcColor = diff <= 1 ? '#22c55e' : diff <= 3 ? '#f59e0b' : '#ef4444';
+        ctx.strokeStyle = arcColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+
+        // малюємо дугу між двома векторами (завжди внутрішню)
+        let startA = a1, endA = a2;
+        let delta = endA - startA;
+        while(delta < 0) delta += Math.PI*2;
+        if(delta > Math.PI) { let tmp=startA; startA=endA; endA=tmp; delta=Math.PI*2-delta; }
+        ctx.arc(p.x, p.y, arcR, startA, endA);
+        ctx.stroke();
+
+        // — значок 90° якщо прямий —
+        if(diff <= 1){
+          const sq = 10;
+          const u1 = {x: v1.x/len1, y: v1.y/len1};
+          const u2 = {x: v2.x/len2, y: v2.y/len2};
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(p.x + u1.x*sq, p.y + u1.y*sq);
+          ctx.lineTo(p.x + u1.x*sq + u2.x*sq, p.y + u1.y*sq + u2.y*sq);
+          ctx.lineTo(p.x + u2.x*sq, p.y + u2.y*sq);
+          ctx.stroke();
+        } else {
+          // — бейдж з числом —
+          const bisX = (v1.x/len1 + v2.x/len2);
+          const bisY = (v1.y/len1 + v2.y/len2);
+          const bisLen = Math.hypot(bisX, bisY) || 1;
+          const labelDist = arcR + 22;
+          const lx = p.x + (bisX/bisLen) * labelDist;
+          const ly = p.y + (bisY/bisLen) * labelDist;
+
+          const label = angle.toFixed(1) + '°';
+          ctx.font = 'bold 12px Arial';
+          const tw = ctx.measureText(label).width;
+          const pad = 4;
+
+          // фон бейджа
+          ctx.fillStyle = diff <= 3 ? '#fef3c7' : '#fee2e2';
+          ctx.beginPath();
+          ctx.roundRect(lx - tw/2 - pad, ly - 9, tw + pad*2, 18, 5);
+          ctx.fill();
+
+          // обводка
+          ctx.strokeStyle = diff <= 3 ? '#f59e0b' : '#ef4444';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // текст
+          ctx.fillStyle = diff <= 3 ? '#92400e' : '#991b1b';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, lx, ly + 4);
+          ctx.textAlign = 'left';
+        }
+      }
+    }
+  });
+
+  if (selectedPoint !== null && pts[selectedPoint]) {
+    ctx.fillStyle = '#34c759'; ctx.beginPath(); ctx.arc(pts[selectedPoint].x, pts[selectedPoint].y, 12, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.fillStyle = '#515154'; ctx.font = "15px Arial";
+  for (let i = 0; i < pts.length; i++) {
+    let j = (i + 1) % pts.length;
+    if (lengths[i]) {
+      const mx=(pts[i].x+pts[j].x)/2;
+      const my=(pts[i].y+pts[j].y)/2;
+      const dx=pts[j].x-pts[i].x;
+      const dy=pts[j].y-pts[i].y;
+      const len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len;
+      const ny=dx/len;
+
+      ctx.strokeStyle='#94a3b8';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(pts[i].x,pts[i].y);
+      ctx.lineTo(pts[i].x+nx*18,pts[i].y+ny*18);
+      ctx.moveTo(pts[j].x,pts[j].y);
+      ctx.lineTo(pts[j].x+nx*18,pts[j].y+ny*18);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(pts[i].x+nx*18,pts[i].y+ny*18);
+      ctx.lineTo(pts[j].x+nx*18,pts[j].y+ny*18);
+      ctx.stroke();
+
+      ctx.fillStyle='#334155';
+      ctx.font='bold 14px Arial';
+      ctx.fillText(lengths[i] + ' см', mx+nx*24, my+ny*24);
+    }
+  }
+
+  // ─── ДІАГОНАЛІ ───────────────────────────────────────────
+  diagonals.forEach(d => {
+    if (!pts[d[0]] || !pts[d[1]]) return;
+
+    const x1=pts[d[0]].x, y1=pts[d[0]].y;
+    const x2=pts[d[1]].x, y2=pts[d[1]].y;
+    const dx=x2-x1, dy=y2-y1;
+    const dist=Math.hypot(dx,dy)||1;
+    const ux=dx/dist, uy=dy/dist;   // unit along diagonal
+    const nx=-uy,    ny=ux;          // normal (perpendicular)
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+
+    // --- Dashed line ---
+    ctx.save();
+    ctx.strokeStyle='#dc2626';
+    ctx.lineWidth=2.2;
+    ctx.setLineDash([10,6]);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // --- Arrowheads at both ends ---
+    const aSize=11;
+    function drawArrow(fromX,fromY,toX,toY){
+      const ax=toX-fromX, ay=toY-fromY;
+      const al=Math.hypot(ax,ay)||1;
+      const bx=ax/al, by=ay/al;
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX-bx*aSize-by*aSize*0.5, toY-by*aSize+bx*aSize*0.5);
+      ctx.lineTo(toX-bx*aSize+by*aSize*0.5, toY-by*aSize-bx*aSize*0.5);
+      ctx.closePath();
+      ctx.fillStyle='#dc2626';
+      ctx.fill();
+    }
+    drawArrow(x2,y2,x1,y1);
+    drawArrow(x1,y1,x2,y2);
+
+    // --- Tick marks at endpoints ---
+    const tk=10;
+    ctx.strokeStyle='#dc2626';
+    ctx.lineWidth=2;
+    [[x1,y1],[x2,y2]].forEach(([px,py])=>{
+      ctx.beginPath();
+      ctx.moveTo(px+nx*tk, py+ny*tk);
+      ctx.lineTo(px-nx*tk, py-ny*tk);
+      ctx.stroke();
+    });
+
+    // --- Pill badge at midpoint ---
+    const overrideKey=N(d[0])+N(d[1]);
+    let len=0;
+    if(realPts.length && realPts[d[0]] && realPts[d[1]]){
+      len=Math.hypot(realPts[d[1]].x-realPts[d[0]].x, realPts[d[1]].y-realPts[d[0]].y);
+    } else {
+      len=dist;
+    }
+    const displayLen = diagonalOverrides[overrideKey] != null ? diagonalOverrides[overrideKey] : len;
+    const cm  = Math.round(displayLen);
+    const m   = (displayLen/100).toFixed(2);
+    const label = `${N(d[0])}${N(d[1])}: ${cm} см`;
+    const label2 = `(${m} м)`;
+
+    ctx.font='bold 13px -apple-system,Arial';
+    const w1=ctx.measureText(label).width;
+    ctx.font='12px -apple-system,Arial';
+    const w2=ctx.measureText(label2).width;
+    const badgeW=Math.max(w1,w2)+22;
+    const badgeH=38;
+    const bx=mx+nx*34-badgeW/2;
+    const by=my+ny*34-badgeH/2;
+    const br=10;
+
+    // Shadow
+    ctx.shadowColor='rgba(0,0,0,0.18)';
+    ctx.shadowBlur=8;
+    ctx.shadowOffsetY=3;
+
+    // Pill background
+    ctx.beginPath();
+    ctx.moveTo(bx+br, by);
+    ctx.lineTo(bx+badgeW-br, by);
+    ctx.quadraticCurveTo(bx+badgeW, by, bx+badgeW, by+br);
+    ctx.lineTo(bx+badgeW, by+badgeH-br);
+    ctx.quadraticCurveTo(bx+badgeW, by+badgeH, bx+badgeW-br, by+badgeH);
+    ctx.lineTo(bx+br, by+badgeH);
+    ctx.quadraticCurveTo(bx, by+badgeH, bx, by+badgeH-br);
+    ctx.lineTo(bx, by+br);
+    ctx.quadraticCurveTo(bx, by, bx+br, by);
+    ctx.closePath();
+
+    // Gradient fill
+    const grad=ctx.createLinearGradient(bx,by,bx,by+badgeH);
+    grad.addColorStop(0,'#fff1f1');
+    grad.addColorStop(1,'#ffe0e0');
+    ctx.fillStyle=grad;
+    ctx.fill();
+
+    ctx.shadowColor='transparent';
+    ctx.shadowBlur=0;
+    ctx.shadowOffsetY=0;
+
+    // Border
+    ctx.strokeStyle='#ef4444';
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+
+    // Top line: label
+    ctx.fillStyle='#991b1b';
+    ctx.font='bold 13px -apple-system,Arial';
+    ctx.textAlign='center';
+    ctx.fillText(label, bx+badgeW/2, by+15);
+
+    // Bottom line: metres
+    ctx.fillStyle='#b91c1c';
+    ctx.font='12px -apple-system,Arial';
+    ctx.fillText(label2, bx+badgeW/2, by+29);
+
+    ctx.textAlign='left';
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// ─── ВВІД ТОЧОК НА CANVAS ────────────────────────────────
+function getCanvasPoint(clientX, clientY) {
+  const r = cv.getBoundingClientRect();
+  const scaleX = cv.width / r.width;
+  const scaleY = cv.height / r.height;
+
+  // ВАЖЛИВО: враховуємо zoom та зміщення canvas.
+  // Без цього після масштабування тап/клік по точках працює неточно.
+  return {
+    x: ((clientX - r.left) * scaleX - viewOffsetX) / viewScale,
+    y: ((clientY - r.top) * scaleY - viewOffsetY) / viewScale
+  };
+}
+
+function handleInputEvent(clientX, clientY) {
+  const point = getCanvasPoint(clientX, clientY);
+  let x = point.x;
+  let y = point.y;
+
+  if (closed && diagonalMode) {
+    let hit = -1;
+    pts.forEach((p, i) => { if (Math.hypot(x - p.x, y - p.y) < 30) hit = i; });
+    if (hit >= 0) {
+      if (selectedPoint === null) {
+        selectedPoint = hit;
+      } else {
+        if (selectedPoint !== hit) {
+
+          const n=pts.length;
+          const diff=Math.abs(selectedPoint-hit);
+          const isNeighbour=(diff===1 || diff===n-1);
+
+          if(!isNeighbour){
+            const a=Math.min(selectedPoint,hit);
+            const b=Math.max(selectedPoint,hit);
+
+            const idx=diagonals.findIndex(d=>
+              Math.min(d[0],d[1])===a &&
+              Math.max(d[0],d[1])===b
+            );
+
+            if(idx>=0){
+              diagonals.splice(idx,1);
+            }else{
+              diagonals.push([selectedPoint,hit]);
+
+              // Одразу відкриваємо введення власного розміру діагоналі.
+              // Тепер не треба окремо шукати олівець у списку.
+              const key = N(a) + N(b);
+              let currentLen = Math.hypot(pts[b].x - pts[a].x, pts[b].y - pts[a].y);
+              if(realPts.length && realPts[a] && realPts[b]){
+                currentLen = Math.hypot(realPts[b].x - realPts[a].x, realPts[b].y - realPts[a].y);
+              }
+              setTimeout(() => editDiagonal(key, Math.round(currentLen)), 80);
+            }
+          }
+        }
+        selectedPoint = null;
+        updateDiagList();
+      }
+      draw();
+    }
+    return;
+  }
+
+  if (closed || circleMode) return;
+
+  if (pts.length >= 3) {
+    const dx = x - pts[0].x;
+    const dy = y - pts[0].y;
+    if (Math.hypot(dx,dy) < 25) {
+      closeShape();
+      saveState();
+      return;
+    }
+  }
+
+  if (pts.length) {
+    const p = pts[pts.length - 1];
+    let dx = x - p.x, dy = y - p.y;
+    let angle = Math.atan2(Math.abs(dy), Math.abs(dx)) * (180 / Math.PI);
+    if (angle < 22.5) { y = p.y; }
+    else if (angle > 67.5) { x = p.x; }
+    else { let dist = Math.min(Math.abs(dx), Math.abs(dy)); x = p.x + Math.sign(dx)*dist; y = p.y + Math.sign(dy)*dist; }
+  }
+
+  pts.push({x, y});
+  updateCornerCount();
+  draw();
+  updateChecks();
+  saveState();
+
+
+}
+
+cv.addEventListener('click', e => handleInputEvent(e.clientX, e.clientY));
+
+// ─── ДОВГИЙ ТАП — НОТАТКИ ────────────────────────────────
+let longPressTimer = null;
+let longPressFired = false;
+
+cv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  longPressFired = false;
+
+  if(e.touches.length !== 1) return;
+
+  const touch = e.touches[0];
+
+  // Якщо увімкнена кнопка «Діагональ», короткий тап по вершині
+  // має вибирати точку, а не чекати довгий тап для нотатки.
+  if (diagonalMode) {
+    handleInputEvent(touch.clientX, touch.clientY);
+    return;
+  }
+
+  const r = cv.getBoundingClientRect();
+  const x = ((touch.clientX - r.left) * (cv.width / r.width) - viewOffsetX) / viewScale;
+  const y = ((touch.clientY - r.top) * (cv.height / r.height) - viewOffsetY) / viewScale;
+
+  // Шукаємо найближчу вершину
+  let hitIndex = -1;
+  if(closed){
+    pts.forEach((p, i) => { if(Math.hypot(x - p.x, y - p.y) < 30) hitIndex = i; });
+  }
+
+  if(hitIndex >= 0 && closed){
+    // Запускаємо таймер довгого тапу
+    longPressTimer = setTimeout(() => {
+      longPressFired = true;
+      openNoteModal(hitIndex);
+    }, 500);
+  } else {
+    // Звичайний тап — малювання або діагональ
+    longPressTimer = setTimeout(() => {}, 9999); // dummy щоб touchend не спрацював двічі
+    handleInputEvent(touch.clientX, touch.clientY);
+  }
+}, { passive: false });
+
+cv.addEventListener('touchend', e => {
+  clearTimeout(longPressTimer);
+  if(longPressFired) return; // вже обробили як довгий тап
+  // якщо це був звичайний тап в режимі діагоналі — вже оброблено вище
+}, { passive: false });
+
+cv.addEventListener('touchmove', e => {
+  // Якщо палець рухається — скасовуємо довгий тап
+  clearTimeout(longPressTimer);
+  longPressFired = false;
+}, { passive: false });
+
+// ─── ЗАМКНУТИ КОНТУР ────────────────────────────────────
+function closeShape() {
+  if (pts.length < 3 || closed) return;
+  closed = true; autoOpenDimensionsAfterClose();
+  let h = '<table><thead><tr><th>Стор.</th><th>см</th></tr></thead><tbody>';
+  for (let i = 0; i < pts.length; i++) {
+    let j = (i + 1) % pts.length;
+    h += `<tr><td style="font-weight:bold;">${N(i)}${N(j)}</td>
+      <td><input type="number" inputmode="decimal" data-i="${i}" placeholder="0" oninput="checkMark(this); saveLen(this)" onkeydown="nextInput(event,this)"></td></tr>`;
+  }
+  h += '</tbody></table>';
+  document.getElementById('tbl').innerHTML = h;
+  setTimeout(() => { const f = document.querySelector('input[data-i="0"]'); if(f){f.focus();f.select();} }, 100);
+  updateCornerCount(); updateChecks(); draw();
+}
+
+function checkMark(el) {
+  if (el.value.trim() !== '' && +el.value > 0) el.classList.add('filled');
+  else el.classList.remove('filled');
+}
+
+function nextInput(event, el) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const inputs = [...document.querySelectorAll('input[data-i]')];
+  const index = inputs.indexOf(el);
+  if (index < inputs.length - 1) { inputs[index+1].focus(); inputs[index+1].select(); }
+  else { document.activeElement.blur(); }
+}
+
+function saveLen(el) {
+  lengths[+el.dataset.i] = +el.value || 0;
+  let per = lengths.reduce((a,b) => a + (+b||0), 0);
+  document.getElementById('per').textContent = (per/100).toFixed(2);
+  
+  draw();
+  updateChecks();
+  saveState();
+}
+
+function updateCornerCount() {
+  let total = pts.length;
+  if (total < 3) { document.getElementById('inCorners').textContent='0'; document.getElementById('outCorners').textContent='0'; return; }
+  let signedArea = 0;
+  for (let i=0; i<total; i++) { let j=(i+1)%total; signedArea += pts[i].x*pts[j].y - pts[j].x*pts[i].y; }
+  let isClockwise = signedArea > 0, internalCount=0, externalCount=0;
+  for (let i=0; i<total; i++) {
+    let prev=pts[(i-1+total)%total], curr=pts[i], next=pts[(i+1)%total];
+    let cross=(curr.x-prev.x)*(next.y-curr.y)-(curr.y-prev.y)*(next.x-curr.x);
+    if (cross===0) continue;
+    if ((cross>0&&isClockwise)||(cross<0&&!isClockwise)) internalCount++; else externalCount++;
+  }
+  document.getElementById('inCorners').textContent = internalCount;
+  document.getElementById('outCorners').textContent = externalCount;
+}
+
+// ─── ПЕРЕБУДУВАТИ ────────────────────────────────────────
+function rebuild() {
+  if (!closed || pts.length < 3 || circleMode) return;
+  realPts = [{x:0,y:0}];
+  for (let i=0; i<pts.length-1; i++) {
+    let p = {...realPts[realPts.length-1]};
+    let len = +lengths[i]||0;
+    let dx=pts[i+1].x-pts[i].x, dy=pts[i+1].y-pts[i].y;
+    let dist=Math.hypot(dx,dy)||1;
+    p.x += (dx/dist)*len; p.y += (dy/dist)*len;
+    realPts.push(p);
+  }
+  let lastPt=realPts[realPts.length-1], expectedLastLen=+lengths[lengths.length-1]||0;
+  let dxLast=pts[0].x-pts[pts.length-1].x, dyLast=pts[0].y-pts[pts.length-1].y;
+  let distLast=Math.hypot(dxLast,dyLast)||1;
+  let theoreticalEndX=lastPt.x+(dxLast/distLast)*expectedLastLen;
+  let theoreticalEndY=lastPt.y+(dyLast/distLast)*expectedLastLen;
+  
+
+  let area=0;
+  for (let i=0;i<realPts.length;i++){let j=(i+1)%realPts.length; area+=realPts[i].x*realPts[j].y-realPts[j].x*realPts[i].y;}
+  area=Math.abs(area)/2;
+  document.getElementById('area').textContent=(area/10000).toFixed(2);
+
+  if(pts.length===3){
+    const a=+lengths[0]||0, b=+lengths[1]||0, c=+lengths[2]||0;
+    if(a>0&&b>0&&c>0){
+      const s=(a+b+c)/2;
+      const heronArea=Math.sqrt(s*(s-a)*(s-b)*(s-c));
+      if(!isNaN(heronArea)&&heronArea>0) document.getElementById('area').textContent=(heronArea/10000).toFixed(2);
+      document.getElementById('per').textContent=((a+b+c)/100).toFixed(2);
+    }
+  }
+
+  let xs=realPts.map(p=>p.x), ys=realPts.map(p=>p.y);
+  let minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  let scale=Math.min(580/Math.max(1,maxX-minX),580/Math.max(1,maxY-minY));
+  pts=realPts.map(p=>({x:(p.x-minX)*scale+85, y:(p.y-minY)*scale+85}));
+  updateDiagList();
+  updateChecks();
+  draw();
+}
+
+
+function buildFromDimensions() {
+  rebuild();
+}
+
+// ─── РЕЖИМ ТРИКУТНИКА ────────────────────────────────────
+function toggleDiag() {
+  if(!closed || pts.length < 3){
+    showToast('Спочатку замкніть контур');
+    return;
+  }
+  diagonalMode = !diagonalMode;
+  selectedPoint = null;
+  document.getElementById('diagBtn').classList.toggle('active', diagonalMode);
+  if(diagonalMode){
+    document.getElementById('diagList').innerHTML = '<div style="padding:8px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;color:#5b21b6;font-weight:700">Натисніть першу вершину, потім другу. Після вибору відкриється поле для введення діагоналі.</div>' + (diagonals.length ? '<div style="height:6px"></div>' : '');
+    updateDiagList();
+  }
+  draw();
+}
+
+function clearDiags() { diagonals=[]; selectedPoint=null; updateDiagList(); draw(); }
+
+
+function editDiagonal(key,currentValue){
+  const current = diagonalOverrides[key] || currentValue;
+  document.getElementById('diagEditKey').value = key;
+  document.getElementById('diagEditInput').value = current;
+  document.getElementById('diagEditModal').classList.add('open');
+  setTimeout(()=>{ document.getElementById('diagEditInput').focus(); document.getElementById('diagEditInput').select(); },100);
+}
+
+function applyDiagEdit(){
+  const key = document.getElementById('diagEditKey').value;
+  const n = parseFloat(document.getElementById('diagEditInput').value);
+  if(!isNaN(n) && n > 0){
+    diagonalOverrides[key] = n;
+    updateDiagList();
+    draw();
+    saveState();
+  }
+  closeModal('diagEditModal');
+}
+
+function updateDiagList() {
+  let out='';
+
+  diagonals.forEach(d => {
+    let len=0;
+
+    if(realPts.length && realPts[d[0]] && realPts[d[1]]){
+      len=Math.hypot(
+        realPts[d[1]].x-realPts[d[0]].x,
+        realPts[d[1]].y-realPts[d[0]].y
+      );
+    }else{
+      len=Math.hypot(
+        pts[d[1]].x-pts[d[0]].x,
+        pts[d[1]].y-pts[d[0]].y
+      );
+    }
+
+    const key=N(d[0])+N(d[1]);
+    const rawVal = diagonalOverrides[key] != null ? diagonalOverrides[key] : len;
+    const showValCm = parseFloat(rawVal).toFixed(0);
+    const showValM  = (parseFloat(rawVal)/100).toFixed(2);
+
+    out += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700">📐 ${key} — ${showValCm} см (${showValM} м)</span>
+      <button type="button" onclick="editDiagonal('${key}',${len.toFixed(0)})">✏️</button>
+    </div>`;
+  });
+
+  if (!circleMode) document.getElementById('diagList').innerHTML = out || 'немає';
+}
+
+
+
+// Drag vertices disabled — layout is read-only after closing
+
+
+function touchDistance(t1,t2){
+  return Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);
+}
+
+cv.addEventListener('touchmove', e=>{
+  if(e.touches.length===2){
+    e.preventDefault();
+
+    const t1=e.touches[0];
+    const t2=e.touches[1];
+    const dist=touchDistance(t1,t2);
+
+    const centerX=(t1.clientX+t2.clientX)/2;
+    const centerY=(t1.clientY+t2.clientY)/2;
+
+    if(!pinchStartDist){
+      pinchStartDist=dist;
+      pinchStartScale=viewScale;
+      return;
+    }
+
+    const oldScale=viewScale;
+    viewScale=Math.max(0.5,Math.min(5,pinchStartScale*(dist/pinchStartDist)));
+
+    const scaleRatio=viewScale/oldScale;
+
+    viewOffsetX=centerX-(centerX-viewOffsetX)*scaleRatio;
+    viewOffsetY=centerY-(centerY-viewOffsetY)*scaleRatio;
+
+    draw();
+  }
+},{passive:false});
+
+cv.addEventListener('touchend', e=>{
+  if(e.touches && e.touches.length<2){
+    pinchStartDist=0;
+  }
+});
+
+
+cv.addEventListener('touchstart', e=>{
+  if(e.touches.length===1 && viewScale>1){
+    isPanning=true;
+    panStartX=e.touches[0].clientX-viewOffsetX;
+    panStartY=e.touches[0].clientY-viewOffsetY;
+  }
+},{passive:false});
+
+cv.addEventListener('touchmove', e=>{
+  if(isPanning && e.touches.length===1 && viewScale>1){
+    e.preventDefault();
+    viewOffsetX=e.touches[0].clientX-panStartX;
+    viewOffsetY=e.touches[0].clientY-panStartY;
+    draw();
+  }
+},{passive:false});
+
+cv.addEventListener('touchend', e=>{
+  if(e.touches.length===0){
+    isPanning=false;
+    pinchStartDist=0;
+  }
+});
+
+
+function zoomIn(){
+  viewScale=Math.min(5,viewScale*1.2);
+  draw();
+}
+
+function zoomOut(){
+  viewScale=Math.max(0.5,viewScale/1.2);
+  draw();
+}
+
+function resetZoom(){
+
+  viewScale=1;
+  viewOffsetX=0;
+  viewOffsetY=0;
+  draw();
+}
+
+
+
+// Touch drag for vertices disabled
+
+
+
+
+function segmentsIntersect(a,b,c,d){
+ function ccw(p1,p2,p3){
+   return (p3.y-p1.y)*(p2.x-p1.x) > (p2.y-p1.y)*(p3.x-p1.x);
+ }
+ return ccw(a,c,d)!=ccw(b,c,d) && ccw(a,b,c)!=ccw(a,b,d);
+}
+
+function pointInPolygon(pt, poly){
+ let inside=false;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+   const xi=poly[i].x, yi=poly[i].y;
+   const xj=poly[j].x, yj=poly[j].y;
+   const intersect=((yi>pt.y)!=(yj>pt.y))
+      && (pt.x<(xj-xi)*(pt.y-yi)/(yj-yi)+xi);
+   if(intersect) inside=!inside;
+ }
+ return inside;
+}
+
+function isValidInnerDiagonal(i,j){
+ const a=pts[i], b=pts[j];
+
+ for(let k=0;k<pts.length;k++){
+   const l=(k+1)%pts.length;
+
+   if(k===i || k===j || l===i || l===j) continue;
+
+   if(segmentsIntersect(a,b,pts[k],pts[l])) return false;
+ }
+
+ const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+ return pointInPolygon(mid,pts);
+}
+
+function autoDiagonals(){
+  diagonals=[];
+  if(pts.length===4){
+    diagonals.push([0,2],[1,3]);
+  }else if(pts.length>4){
+    let maxLen=0,best=null;
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+2;j<pts.length;j++){
+        const diff=Math.abs(i-j);
+        if(diff===1 || diff===pts.length-1) continue;
+        const len=Math.hypot(pts[j].x-pts[i].x,pts[j].y-pts[i].y);
+        if(len>maxLen){maxLen=len;best=[i,j];}
+      }
+    }
+    if(best) diagonals.push(best);
+  }
+  updateDiagList();
+  updateChecks();
+  draw();
+}
+
+
+
+function segmentsIntersect(a,b,c,d){
+ function ccw(p1,p2,p3){
+   return (p3.y-p1.y)*(p2.x-p1.x) > (p2.y-p1.y)*(p3.x-p1.x);
+ }
+ return ccw(a,c,d)!=ccw(b,c,d) && ccw(a,b,c)!=ccw(a,b,d);
+}
+
+function pointInPolygon(pt, poly){
+ let inside=false;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+   const xi=poly[i].x, yi=poly[i].y;
+   const xj=poly[j].x, yj=poly[j].y;
+   const intersect=((yi>pt.y)!=(yj>pt.y))
+      && (pt.x<(xj-xi)*(pt.y-yi)/(yj-yi)+xi);
+   if(intersect) inside=!inside;
+ }
+ return inside;
+}
+
+function isValidInnerDiagonal(i,j){
+ const a=pts[i], b=pts[j];
+
+ for(let k=0;k<pts.length;k++){
+   const l=(k+1)%pts.length;
+
+   if(k===i || k===j || l===i || l===j) continue;
+
+   if(segmentsIntersect(a,b,pts[k],pts[l])) return false;
+ }
+
+ const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+ return pointInPolygon(mid,pts);
+}
+
+function autoDiagonals(){
+ if(!closed) return;
+
+ let h='';
+ for(let i=0;i<pts.length;i++){
+   for(let j=i+1;j<pts.length;j++){
+     const diff=Math.abs(i-j);
+     if(diff===1 || diff===pts.length-1) continue;
+
+     if(!isValidInnerDiagonal(i,j)) continue;
+     const a=N(i), b=N(j);
+     const checked=diagonals.some(d=>
+       (d[0]===i&&d[1]===j)||(d[0]===j&&d[1]===i)
+     );
+
+     h+=`<label style="display:block;margin:8px 0">
+       <input type="checkbox" ${checked?'checked':''}
+       onchange="toggleDiagPair(${i},${j},this.checked)">
+       ${a}${b}
+     </label>`;
+   }
+ }
+
+ document.getElementById('diagSelector').innerHTML=h||'Немає доступних діагоналей';
+ document.getElementById('diagModal').classList.add('open');
+}
+
+function toggleDiagPair(a,b,state){
+ const idx=diagonals.findIndex(d=>
+   (d[0]===a&&d[1]===b)||(d[0]===b&&d[1]===a)
+ );
+
+ if(state && idx<0) {
+   diagonals.push([a,b]);
+   let currentLen = Math.hypot(pts[b].x - pts[a].x, pts[b].y - pts[a].y);
+   if(realPts.length && realPts[a] && realPts[b]){
+     currentLen = Math.hypot(realPts[b].x - realPts[a].x, realPts[b].y - realPts[a].y);
+   }
+   setTimeout(() => editDiagonal(N(a)+N(b), Math.round(currentLen)), 80);
+ }
+ if(!state && idx>=0) diagonals.splice(idx,1);
+
+ updateDiagList();
+ updateChecks();
+ draw();
+}
+
+function updateChecks(){ return; }
+
+loadState();
+function updatePdfButton(){}
+
+// ─── СКИНУТИ (тихо, без UI-reset) ───────────────────────
+
+function resetProjectElementValues(){
+  // Номенклатуру (назви/групи/одиниці) залишаємо,
+  // але кількості очищаємо для нового заміру / нового проєкту.
+  if (typeof elemItems !== 'undefined' && Array.isArray(elemItems)) {
+    elemItems.forEach(it => { it.qty = 0; });
+  }
+  if (typeof _activeAddGroupId !== 'undefined') _activeAddGroupId = null;
+  if (typeof updateElemBadge === 'function') updateElemBadge();
+  if (typeof renderElemList === 'function') {
+    const modal = document.getElementById('elementsModal');
+    if (modal && modal.classList.contains('open')) renderElemList();
+  }
+}
+
+function resetAllSilent() {
+  pts=[]; lengths=[]; realPts=[]; diagonals=[]; notes=[]; selectedPoint=null;
+  diagonalOverrides={};
+  closed=false; diagonalMode=false; triangleMode=false; circleMode=false; circleDiamCm=0;
+  resetProjectElementValues();
+  document.getElementById('diagBtn').classList.remove('active');
+}
+
+function resetAll() {
+  resetAllSilent();
+  document.getElementById('tbl').innerHTML='<table><tr><td style="color:#8e8e93; padding: 10px; text-align:center; font-size:11px;">Натискайте на екран, щоб ставити кути (прямі та скоси)</td></tr></table>';
+  document.getElementById('diagList').innerHTML='немає';
+  document.getElementById('per').textContent='0.00';
+  document.getElementById('area').textContent='0.00';
+  document.getElementById('inCorners').textContent='0';
+  document.getElementById('outCorners').textContent='0';
+  draw();
+  saveState();
+}
+
+// Закрити модалку кліком на фон
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.classList.remove('open'); });
+});
+</script>
+
+
+
+
+<script>
+
+async function saveToPhone(){
+  try{
+    const canvas = document.getElementById('cv');
+    if(!canvas){ showToast('Полотно не знайдено'); return; }
+    if(!closed){ showToast('Спочатку замкніть контур'); return; }
+
+    const W = 1080, PAD = 48;
+    const out = document.createElement('canvas');
+
+    // — збираємо дані кутів —
+    const angleData = [];
+    if(!circleMode && pts.length >= 3){
+      for(let i=0;i<pts.length;i++){
+        const p = pts[i];
+        const prev = pts[(i-1+pts.length)%pts.length];
+        const next = pts[(i+1)%pts.length];
+        const v1={x:prev.x-p.x,y:prev.y-p.y};
+        const v2={x:next.x-p.x,y:next.y-p.y};
+        const l1=Math.hypot(v1.x,v1.y), l2=Math.hypot(v2.x,v2.y);
+        if(l1>0&&l2>0){
+          let cosA=(v1.x*v2.x+v1.y*v2.y)/(l1*l2);
+          cosA=Math.max(-1,Math.min(1,cosA));
+          const angle=Math.acos(cosA)*180/Math.PI;
+          angleData.push({label:N(i), angle, diff:Math.abs(angle-90)});
+        }
+      }
+    }
+
+    // — підраховуємо висоту —
+    const diagText = document.getElementById('diagList')?.innerText||'немає';
+    const diagLines = diagText.split('\n').filter(l=>l.trim());
+    const hasNotes = notes.some(n=>n&&n.trim());
+    const noteLines = notes.map((n,i)=>n&&n.trim()?`${N(i)}: ${n}`:null).filter(Boolean);
+    const badAngles = angleData.filter(a=>a.diff>1);
+
+    // — елементи номенклатури, згруповані —
+    const _allElemItems  = (typeof elemItems!=='undefined') ? elemItems : [];
+    const _allElemGroups = (typeof elemGroups!=='undefined') ? elemGroups : [];
+    const activeElems = _allElemItems.filter(it=>it.qty>0);
+    const elemLines = []; // {type:'group',name} | {type:'item', it}
+    const _byGroup = {};
+    activeElems.forEach(it=>{
+      const gId = (it.groupId && _allElemGroups.some(g=>g.id===it.groupId)) ? it.groupId : '_none';
+      (_byGroup[gId] = _byGroup[gId] || []).push(it);
+    });
+    _allElemGroups.forEach(g=>{
+      if(_byGroup[g.id] && _byGroup[g.id].length){
+        elemLines.push({type:'group', name:g.name});
+        _byGroup[g.id].forEach(it=>elemLines.push({type:'item', it}));
+      }
+    });
+    if(_byGroup['_none'] && _byGroup['_none'].length){
+      if(_allElemGroups.length) elemLines.push({type:'group', name:'Без групи'});
+      _byGroup['_none'].forEach(it=>elemLines.push({type:'item', it}));
+    }
+    const elemGroupLineCount = elemLines.filter(l=>l.type==='group').length;
+    const elemItemLineCount  = elemLines.filter(l=>l.type==='item').length;
+
+    let H = 80 + 60 + 920 + 40; // header + subtitle + canvas + gap
+    // клієнтська картка
+    const _hName = (typeof _currentProjName!=='undefined'&&_currentProjName) ? _currentProjName : '';
+    const _hAddr = (typeof _currentProjAddr!=='undefined'&&_currentProjAddr) ? _currentProjAddr : '';
+    const _hPhone = (typeof _currentProjPhone!=='undefined'&&_currentProjPhone) ? _currentProjPhone : '';
+    const _hComment = (typeof _currentProjComment!=='undefined'&&_currentProjComment) ? _currentProjComment : '';
+    if(_hName||_hAddr||_hPhone||_hComment){
+      H += 18 + (_hName?30:0) + (_hAddr?26:0) + (_hPhone?26:0) + (_hComment?26:0) + 14 + 16;
+    }
+    H += 40 + 24*2 + 16; // секція розміри
+    const statRows = 2;
+    H += statRows * 56 + 32;
+    if(diagLines.length){ H += 40 + diagLines.length*36 + 24; }
+    if(badAngles.length){ H += 40 + badAngles.length*36 + 24; }
+    if(hasNotes){ H += 40 + noteLines.length*36 + 24; }
+    if(elemLines.length){ H += 50 + elemGroupLineCount*40 + elemItemLineCount*46 + 40; }
+
+    // запас висоти для великої кількості елементів, щоб останні групи не обрізались
+    H += 360;
+    H = Math.max(H, 2200);
+
+    out.width = W; out.height = H;
+    const c = out.getContext('2d');
+
+    // — фон —
+    const bg = c.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#f0f4ff');
+    bg.addColorStop(1,'#f8fafc');
+    c.fillStyle = bg;
+    c.fillRect(0,0,W,H);
+
+    // — хедер —
+    const hdr = c.createLinearGradient(0,0,W,80);
+    hdr.addColorStop(0,'#2563eb'); hdr.addColorStop(1,'#6366f1');
+    c.fillStyle = hdr;
+    roundRect(c,0,0,W,80,0); c.fill();
+
+    c.fillStyle='#fff'; c.font='bold 32px Arial'; c.textAlign='center';
+    c.fillText('Замір натяжної стелі', W/2, 50);
+    c.font='16px Arial'; c.fillStyle='rgba(255,255,255,.75)';
+    const now = new Date();
+    c.fillText(now.toLocaleDateString('uk-UA')+' • '+now.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'}), W/2, 72);
+    c.textAlign='left';
+
+    let y = 100;
+
+    // — клієнтська картка —
+    const _rName    = (typeof _currentProjName    !== 'undefined' && _currentProjName)    ? _currentProjName    : '';
+    const _rAddr    = (typeof _currentProjAddr    !== 'undefined' && _currentProjAddr)    ? _currentProjAddr    : '';
+    const _rPhone   = (typeof _currentProjPhone   !== 'undefined' && _currentProjPhone)   ? _currentProjPhone   : '';
+    const _rComment = (typeof _currentProjComment !== 'undefined' && _currentProjComment) ? _currentProjComment : '';
+    if(_rName || _rAddr || _rPhone || _rComment){
+      const cardH = 18 + (_rName?30:0) + (_rAddr?26:0) + (_rPhone?26:0) + (_rComment?26:0) + 14;
+      drawCardBg(c, PAD-8, y, W-PAD*2+16, cardH, 16, '#f0f9ff');
+      c.strokeStyle='#bfdbfe'; c.lineWidth=1.5;
+      c.beginPath(); c.roundRect(PAD-8, y, W-PAD*2+16, cardH, 16); c.stroke();
+      let cy = y + 18;
+      if(_rName){
+        c.fillStyle='#1e3a8a'; c.font='bold 22px Arial';
+        c.fillText('👤 '+_rName, PAD+4, cy); cy+=30;
+      }
+      if(_rAddr){
+        c.fillStyle='#475569'; c.font='16px Arial';
+        c.fillText('📍 '+_rAddr, PAD+4, cy); cy+=26;
+      }
+      if(_rPhone){
+        c.fillStyle='#0f766e'; c.font='16px Arial';
+        c.fillText('📞 '+_rPhone, PAD+4, cy); cy+=26;
+      }
+      if(_rComment){
+        c.fillStyle='#6d28d9'; c.font='italic 15px Arial';
+        c.fillText('💬 '+_rComment, PAD+4, cy); cy+=26;
+      }
+      y += cardH + 16;
+    }
+
+    // — креслення —
+    const cSize = W - PAD*2;
+    drawCardBg(c, PAD-8, y-8, cSize+16, cSize+16, 20);
+    c.drawImage(canvas, PAD, y, cSize, cSize);
+    y += cSize + 32;
+
+    // — статистика 2x2 —
+    const per  = document.getElementById('per')?.textContent||'—';
+    const area = document.getElementById('area')?.textContent||'—';
+    const ic   = document.getElementById('inCorners')?.textContent||'—';
+    const oc   = document.getElementById('outCorners')?.textContent||'—';
+
+    const stats = [
+      {label:'ПЛОЩА',    value:area+' м²', bg:'#eff6ff', accent:'#2563eb'},
+      {label:'ПЕРИМЕТР', value:per+' м',   bg:'#f0fdfa', accent:'#0f766e'},
+      {label:'ВНУТР. КУТИ', value:ic,      bg:'#f0fdf4', accent:'#15803d'},
+      {label:'ЗОВН. КУТИ',  value:oc,      bg:'#fff7ed', accent:'#c2410c'},
+    ];
+    const sw=(W-PAD*2-16)/2;
+    stats.forEach((s,i)=>{
+      const sx = PAD + (i%2)*(sw+16);
+      const sy = y + Math.floor(i/2)*72;
+      drawCardBg(c, sx, sy, sw, 60, 14, s.bg);
+      c.fillStyle=s.accent; c.font='bold 11px Arial';
+      c.fillText(s.label, sx+14, sy+20);
+      c.font='bold 26px Arial';
+      c.fillText(s.value, sx+14, sy+48);
+    });
+    y += 144+24;
+
+    // — сторони —
+    if(lengths.some(l=>l>0)){
+      y = drawSection(c,'СТОРОНИ',y,W,PAD);
+      const sideItems = lengths.map((l,i)=>{
+        const j=(i+1)%pts.length;
+        return l>0 ? `${N(i)}${N(j)} = ${l} см` : null;
+      }).filter(Boolean);
+      sideItems.forEach(txt=>{
+        c.fillStyle='#334155'; c.font='18px Arial';
+        c.fillText('• '+txt, PAD+12, y+4); y+=34;
+      });
+      y+=12;
+    }
+
+    // — діагоналі —
+    if(diagLines.length && diagText!=='немає'){
+      y = drawSection(c,'ДІАГОНАЛІ',y,W,PAD);
+      diagLines.forEach(line=>{
+        c.fillStyle='#334155'; c.font='18px Arial';
+        c.fillText('• '+line.trim(), PAD+12, y+4); y+=34;
+      });
+      y+=12;
+    }
+
+    // — кути з відхиленням —
+    if(badAngles.length){
+      y = drawSection(c,'ВІДХИЛЕННЯ КУТІВ ВІД 90°',y,W,PAD);
+      badAngles.forEach(a=>{
+        const ok = a.diff<=3;
+        c.fillStyle = ok?'#92400e':'#991b1b';
+        c.font='bold 18px Arial';
+        c.fillText(`• Кут ${a.label}: ${a.angle.toFixed(1)}°  (${a.diff>0?'+':''}${(a.angle-90).toFixed(1)}°)`, PAD+12, y+4);
+        y+=34;
+      });
+      y+=12;
+    } else if(angleData.length){
+      y = drawSection(c,'КУТИ',y,W,PAD);
+      c.fillStyle='#15803d'; c.font='bold 18px Arial';
+      c.fillText('✓ Всі кути прямі (90°)', PAD+12, y+4); y+=34+12;
+    }
+
+    // — нотатки —
+    if(hasNotes){
+      y = drawSection(c,'НОТАТКИ',y,W,PAD);
+      noteLines.forEach(line=>{
+        c.fillStyle='#334155'; c.font='18px Arial';
+        c.fillText('• '+line, PAD+12, y+4); y+=34;
+      });
+      y+=12;
+    }
+
+    // — елементи —
+    if(elemLines.length){
+      y = drawSection(c,'ЕЛЕМЕНТИ',y,W,PAD);
+      elemLines.forEach(l=>{
+        if(l.type==='group'){
+          c.fillStyle='#4f46e5'; c.font='bold 16px Arial';
+          c.fillText(l.name.toUpperCase(), PAD+4, y+2); y+=30;
+        } else {
+          const it = l.it;
+          const qtyStr = (it.qty % 1 === 0) ? it.qty : it.qty.toFixed(2);
+          c.fillStyle='#334155'; c.font='18px Arial';
+          c.fillText(`• ${it.icon} ${it.name}: ${qtyStr} ${it.unit||'шт'}`, PAD+20, y+4); y+=34;
+        }
+      });
+      y+=12;
+    }
+
+    // — footer —
+    c.fillStyle='#94a3b8'; c.font='14px Arial'; c.textAlign='center';
+    c.fillText('Конструктор натяжної стелі', W/2, H-20);
+    c.textAlign='left';
+
+    // — відкриваємо —
+    const win=window.open();
+    if(!win){ showToast('Дозвольте спливаючі вікна'); return; }
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width">
+      <title>Звіт замірів</title>
+      <style>
+      html,body{margin:0;min-height:100%;background:#e2e8f0;}
+      body{display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow-y:auto;}
+      img{display:block;max-width:100%;height:auto;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+      a{display:block;text-align:center;margin:12px 0 24px;font-family:Arial;font-size:18px;color:#2563eb}
+      </style></head><body>
+      <div><img src="${out.toDataURL('image/png')}" id="img">
+      <a href="${out.toDataURL('image/png')}" download="zamіr_steli.png">⬇ Зберегти картинку</a>
+      </div></body></html>`);
+  }catch(e){
+    console.error(e);
+    showToast('Помилка: '+e.message);
+  }
+}
+
+function drawCardBg(c,x,y,w,h,r,fill='#fff'){
+  c.fillStyle=fill;
+  c.beginPath();
+  c.roundRect(x,y,w,h,r);
+  c.fill();
+  c.strokeStyle='rgba(0,0,0,.06)'; c.lineWidth=1;
+  c.stroke();
+}
+
+function drawSection(c,title,y,W,PAD){
+  c.fillStyle='#64748b'; c.font='bold 12px Arial';
+  c.fillText(title, PAD, y+2);
+  c.strokeStyle='#e2e8f0'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(PAD, y+8); c.lineTo(W-PAD, y+8); c.stroke();
+  return y+24;
+}
+
+function roundRect(c,x,y,w,h,r){
+  c.beginPath(); c.roundRect(x,y,w,h,r);
+}
+
+</script>
+
+
+<div class="modal-overlay" id="sideInputModal">
+  <div class="modal" style="width:360px;max-height:80vh;overflow:auto;">
+    <h3>📋 Ввести розміри сторін</h3>
+    <div id="sideInputsContainer"></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeModal('sideInputModal')">Скасувати</button><button onclick="applySideInputs()">Побудувати</button></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="diagModal">
+  <div class="modal" style="width:360px;max-height:80vh;overflow:auto;">
+    <h3>📐 Контрольні діагоналі</h3>
+    <div id="diagSelector"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('diagModal')">Закрити</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Модальне вікно: Редагування діагоналі -->
+<div class="modal-overlay" id="diagEditModal">
+  <div class="modal">
+    <h3>✏️ Введіть діагональ</h3>
+    <input type="hidden" id="diagEditKey">
+    <label id="diagEditLabel">Діагональ (см)</label>
+    <input type="number" inputmode="decimal" id="diagEditInput" placeholder="напр. 450"
+      style="width:100%;padding:10px;border:1px solid #dbe4f0;border-radius:10px;font-size:18px;font-weight:700;text-align:center;margin-top:8px"
+      onkeydown="if(event.key==='Enter'){applyDiagEdit();}">
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeModal('diagEditModal')">Скасувати</button>
+      <button onclick="applyDiagEdit()">✓ Зберегти</button>
+    </div>
+  </div>
+</div>
+<!-- Модальне вікно: Нотатка до точки -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <h3 id="noteModalTitle">📝 Нотатка</h3>
+    <input type="hidden" id="notePointIndex">
+    <textarea id="noteText"
+      placeholder="Наприклад: тут труба, ніша 15 см, відступ від вікна..."
+      style="width:100%;min-height:100px;padding:10px;border:1px solid #dbe4f0;
+             border-radius:12px;font-size:15px;resize:vertical;
+             font-family:-apple-system,sans-serif;margin-top:8px;line-height:1.5"
+    ></textarea>
+    <div style="margin-top:6px;font-size:11px;color:#94a3b8">Утримуйте точку 0.5с щоб відкрити нотатку</div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeModal('noteModal')">Скасувати</button>
+      <button style="background:linear-gradient(135deg,#f59e0b,#fbbf24)" onclick="clearNote()">🗑 Видалити</button>
+      <button onclick="saveNote()">✓ Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openNoteModal(index){
+  document.getElementById('notePointIndex').value = index;
+  document.getElementById('noteModalTitle').textContent = `📝 Нотатка — точка ${N(index)}`;
+  document.getElementById('noteText').value = notes[index] || '';
+  document.getElementById('noteModal').classList.add('open');
+  setTimeout(()=>{ document.getElementById('noteText').focus(); }, 150);
+}
+
+function saveNote(){
+  const i = +document.getElementById('notePointIndex').value;
+  const text = document.getElementById('noteText').value.trim();
+  notes[i] = text;
+  closeModal('noteModal');
+  draw();
+  saveState();
+}
+
+function clearNote(){
+  const i = +document.getElementById('notePointIndex').value;
+  notes[i] = '';
+  closeModal('noteModal');
+  draw();
+  saveState();
+}
+</script>
+
+<!-- Модальне вікно: Зберегти проєкт -->
+<div class="modal-overlay" id="saveProjectModal">
+  <div class="modal">
+    <h3>💾 Зберегти проєкт</h3>
+    <label>Назва / Клієнт</label>
+    <input type="text" id="projName" placeholder="напр. Іванченко, вітальня"
+      style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;margin-top:4px">
+    <label>Адреса</label>
+    <input type="text" id="projAddr" placeholder="напр. вул. Шевченка 12, кв.5"
+      style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;margin-top:4px">
+    <label>Телефон клієнта</label>
+    <input type="tel" id="projPhone" placeholder="напр. +380 67 123 45 67"
+      style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;margin-top:4px">
+    <label>Коментар</label>
+    <textarea id="projComment" placeholder="напр. матова біла, є труба в кутку B, монтаж 15.07"
+      style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;margin-top:4px;min-height:72px;resize:vertical;font-family:-apple-system,sans-serif;line-height:1.45"></textarea>
+    <div class="modal-btns" style="margin-top:18px">
+      <button class="btn-cancel" onclick="closeModal('saveProjectModal')">Скасувати</button>
+      <button onclick="saveProject()">✓ Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальне вікно: Список проєктів -->
+<div class="modal-overlay" id="projectsModal">
+  <div class="modal" style="width:min(96vw,480px);max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="margin:0;font-size:1.1rem;font-weight:800">📁 Проєкти</h3>
+        <button onclick="closeModal('projectsModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:22px;padding:4px;line-height:1">×</button>
+      </div>
+      <input type="text" id="projSearch" oninput="renderProjects()" placeholder="🔍 Пошук за назвою або адресою..."
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px">
+    </div>
+    <div id="projectsList" style="overflow-y:auto;flex:1;padding:12px"></div>
+  </div>
+</div>
+
+<script>
+// ── ПРОЄКТИ ──────────────────────────────────────────────
+
+let _currentProjName = '', _currentProjAddr = '', _currentProjPhone = '', _currentProjComment = '';
+
+function getProjects(){
+  try{ return JSON.parse(localStorage.getItem('ceiling_projects')||'[]'); }
+  catch(e){ return []; }
+}
+function setProjects(arr){
+  localStorage.setItem('ceiling_projects', JSON.stringify(arr));
+}
+
+function openSaveProjectModal(){
+  if(!closed){ showToast('Спочатку замкніть контур'); return; }
+  document.getElementById('projName').value='';
+  document.getElementById('projAddr').value='';
+  document.getElementById('projPhone').value='';
+  document.getElementById('projComment').value='';
+  document.getElementById('saveProjectModal').classList.add('open');
+  setTimeout(()=>document.getElementById('projName').focus(),100);
+}
+
+function saveProject(){
+  const name = document.getElementById('projName').value.trim();
+  const addr = document.getElementById('projAddr').value.trim();
+  const phone = document.getElementById('projPhone').value.trim();
+  const comment = document.getElementById('projComment').value.trim();
+  if(!name){ showToast('Введіть назву проєкту'); return; }
+
+  // мініатюра з canvas
+  const thumb = document.getElementById('cv').toDataURL('image/jpeg', 0.5);
+
+  const project = {
+    id: Date.now(),
+    name, addr, phone, comment,
+    date: new Date().toLocaleDateString('uk-UA'),
+    area: document.getElementById('area').textContent,
+    per:  document.getElementById('per').textContent,
+    inC:  document.getElementById('inCorners').textContent,
+    outC: document.getElementById('outCorners').textContent,
+    thumb,
+    state: JSON.stringify({pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,diagonalOverrides,notes,elemItems,elemGroups})
+  };
+
+  const projects = getProjects();
+  projects.unshift(project);
+  setProjects(projects);
+
+  _currentProjName = name;
+  _currentProjAddr = addr;
+  _currentProjPhone = phone;
+  _currentProjComment = comment;
+
+  closeModal('saveProjectModal');
+
+  // коротке підтвердження
+  const toast = document.createElement('div');
+  toast.textContent = '✓ Збережено';
+  toast.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:99px;font-weight:700;font-size:14px;z-index:9999;';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 2000);
+}
+
+function openProjectsModal(){
+  renderProjects();
+  document.getElementById('projectsModal').classList.add('open');
+}
+
+function renderProjects(){
+  const q = (document.getElementById('projSearch')?.value||'').toLowerCase();
+  const projects = getProjects().filter(p=>
+    !q || p.name.toLowerCase().includes(q) || (p.addr||'').toLowerCase().includes(q) || (p.phone||'').includes(q) || (p.comment||'').toLowerCase().includes(q)
+  );
+
+  const el = document.getElementById('projectsList');
+  if(!projects.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:#94a3b8">
+      <div style="font-size:40px;margin-bottom:8px">📂</div>
+      <div style="font-weight:700">${q?'Нічого не знайдено':'Поки немає збережених проєктів'}</div>
+      <div style="font-size:13px;margin-top:4px">Намалюйте контур і тапніть "В проєкти"</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = projects.map(p=>`
+    <div style="background:#fff;border-radius:16px;margin-bottom:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;display:flex;gap:0">
+      <img src="${p.thumb}" style="width:90px;height:90px;object-fit:cover;flex-shrink:0;background:#f8fafc">
+      <div style="padding:10px 12px;flex:1;min-width:0">
+        <div style="font-weight:800;font-size:14px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        ${p.addr?`<div style="font-size:12px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${p.addr}</div>`:''}
+        ${p.phone?`<div style="font-size:12px;color:#0f766e;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📞 <a href="tel:${p.phone}" style="color:#0f766e;text-decoration:none">${p.phone}</a></div>`:''}
+        ${p.comment?`<div style="font-size:11px;color:#7c3aed;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💬 ${p.comment}</div>`:''}
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px">${p.date}</div>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <span style="background:#eff6ff;color:#2563eb;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">${p.area} м²</span>
+          <span style="background:#f0fdfa;color:#0f766e;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700">${p.per} м</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;padding:8px 6px;gap:6px;justify-content:center">
+        <button onclick="loadProject(${p.id})" style="
+          background:linear-gradient(135deg,#2563eb,#6366f1);
+          border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;
+          box-shadow:0 3px 8px rgba(37,99,235,.3)">Відкрити</button>
+        <button onclick="deleteProject(${p.id}, this)" style="
+          background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
+          color:#dc2626;border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;
+          box-shadow:none">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadProject(id){
+  const p = getProjects().find(p=>p.id===id);
+  if(!p) return;
+  try{
+    const d = JSON.parse(p.state);
+    pts=d.pts||[]; lengths=d.lengths||[]; realPts=d.realPts||[];
+    closed=!!d.closed; diagonals=d.diagonals||[]; diagonalOverrides=d.diagonalOverrides||{};
+    circleMode=!!d.circleMode; circleDiamCm=d.circleDiamCm||0; notes=d.notes||[];
+    // Кількості елементів цього проєкту (якщо збережені разом з ним).
+    // Самі групи/назви номенклатури — спільні і не перезатираються,
+    // якщо у старому проєкті їх ще не було.
+    if(d.elemItems){
+      elemItems = d.elemItems;
+      elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; });
+    }
+    if(d.elemGroups) elemGroups = d.elemGroups;
+    _currentProjName    = p.name    || '';
+    _currentProjAddr    = p.addr    || '';
+    _currentProjPhone   = p.phone   || '';
+    _currentProjComment = p.comment || '';
+    closeModal('projectsModal');
+    draw();
+    saveState();
+    updateElemBadge();
+
+    // оновлюємо статистику
+    const per2=lengths.reduce((a,b)=>a+(+b||0),0);
+    document.getElementById('per').textContent=(per2/100).toFixed(2);
+    updateCornerCount();
+  }catch(e){ showToast('Помилка завантаження проєкту'); }
+}
+
+function deleteProject(id, btn){
+  confirmTap(btn, '⚠️ Ще раз — видалити', function(){
+    setProjects(getProjects().filter(p=>p.id!==id));
+    renderProjects();
+  });
+}
+</script>
+
+<div id="pwaBar" style="
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;
+  background:#fff;border-top:1px solid #e2e8f0;
+  padding:14px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.1);
+  display:none;align-items:center;gap:12px;
+">
+  <div style="flex:1">
+    <div style="font-weight:700;font-size:14px;color:#1e293b">Додати на екран</div>
+    <div style="font-size:12px;color:#64748b">Відкривати як додаток, без браузера</div>
+  </div>
+  <button id="pwaInstallBtn" style="
+    background:linear-gradient(135deg,#2563eb,#6366f1);
+    color:#fff;border:none;border-radius:12px;
+    padding:10px 18px;font-weight:700;font-size:14px;
+    box-shadow:0 4px 12px rgba(37,99,235,.3);cursor:pointer;
+  ">Встановити</button>
+  <button onclick="document.getElementById('pwaBar').style.display='none'" style="
+    background:none;border:none;color:#94a3b8;font-size:22px;
+    padding:4px;cursor:pointer;box-shadow:none;
+  ">×</button>
+</div>
+
+<script>
+// — Service Worker (офлайн кеш) —
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE = 'stelia-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+
+// — Install prompt —
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('pwaBar').style.display = 'flex';
+});
+
+document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwaBar').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaBar').style.display = 'none';
+});
+</script>
+
+<style>
+/* ── ELEMENTS MODAL ───────────────────────── */
+.em-row{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 10px;border-radius:14px;
+  background:#f8fafc;margin-bottom:7px;
+  border:1.5px solid #e2e8f0;
+  transition:border-color .15s;
+  overflow:hidden;
+}
+.em-row:hover{border-color:#c7d2fe;}
+.em-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0;cursor:pointer;}
+.em-name{flex:1;font-size:14px;font-weight:700;color:#1e293b;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+input.em-qty-input{
+  width:62px!important;flex-shrink:0;flex-grow:0;
+  font-size:15px;font-weight:800;color:#9a3412;text-align:center!important;
+  background:#fff7ed;border:1.5px solid #fed7aa!important;border-radius:10px!important;
+  padding:6px 2px!important;transition:border-color .15s;
+}
+input.em-qty-input:focus{outline:none;border-color:#ea580c!important;background:#fff;}
+.em-unit{
+  font-size:12px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,#ea580c,#fb923c);
+  border-radius:9px;padding:0;width:34px;height:30px;
+  cursor:pointer;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(234,88,12,.3);
+  border:none;transition:transform .1s;
+}
+.em-unit:active{transform:scale(.92);}
+.em-del{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:#fee2e2;color:#dc2626;font-size:16px;font-weight:700;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;
+}
+.em-edit{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:#e0e7ff;color:#4338ca;font-size:14px;font-weight:700;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;
+}
+.em-add-row{
+  display:flex;gap:8px;align-items:center;margin-top:4px;
+}
+.em-add-icon{
+  width:42px;height:42px;border-radius:12px;border:1.5px solid #e2e8f0;
+  font-size:22px;text-align:center;background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.em-add-name{
+  flex:1;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:12px;
+  font-size:14px;font-weight:600;background:#fff;
+}
+.em-add-name:focus{outline:none;border-color:#6366f1;}
+.em-add-btn{
+  border:none;border-radius:12px;padding:10px 16px;
+  background:linear-gradient(135deg,#2563eb,#6366f1);color:#fff;
+  font-size:14px;font-weight:800;cursor:pointer;flex-shrink:0;
+  box-shadow:0 2px 10px rgba(37,99,235,.3);
+}
+.em-add-btn:active{transform:scale(.95);}
+
+/* ── ГРУПИ НОМЕНКЛАТУРИ ──────────────────────── */
+.grp-card{
+  border:1.5px solid #e2e8f0;border-radius:16px;
+  margin-bottom:12px;overflow:hidden;background:#fff;
+}
+.grp-header{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 10px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+}
+.grp-name{flex:1;font-weight:800;font-size:13.5px;color:#4338ca;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.grp-count{
+  font-size:11px;font-weight:800;color:#4f46e5;background:#e0e7ff;
+  border-radius:99px;padding:2px 8px;flex-shrink:0;
+}
+.grp-toggle{
+  width:26px;height:26px;border-radius:8px;border:none;
+  background:rgba(79,70,229,.12);color:#4f46e5;
+  font-size:15px;font-weight:800;line-height:1;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;padding:0;transition:transform .15s;
+}
+.grp-toggle:active{transform:scale(.9);}
+.grp-add{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;
+  font-size:16px;font-weight:800;line-height:1;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;padding:0;
+}
+.grp-add:active{transform:scale(.92);}
+.grp-del{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:#fee2e2;color:#dc2626;font-size:14px;font-weight:700;line-height:1;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;padding:0;
+}
+.grp-edit{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:#e0e7ff;color:#4338ca;font-size:14px;font-weight:700;line-height:1;
+  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  box-shadow:none;padding:0;
+}
+.grp-body{padding:10px 8px 8px;}
+.grp-empty{font-size:12px;color:#94a3b8;padding:2px 4px 8px;}
+.grp-add-row{display:none;gap:7px;align-items:center;padding:0 2px 6px;}
+.grp-add-row.open{display:flex;}
+.grp-add-row input{
+  flex:1;min-width:0;padding:8px 10px;border:1.5px solid #c7d2fe;
+  border-radius:10px;font-size:13px;background:#fff;
+}
+.grp-add-row input:focus{outline:none;border-color:#6366f1;}
+.grp-add-row button{
+  flex-shrink:0;padding:8px 12px;font-size:12px;border-radius:10px;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);
+}
+
+/* emoji picker */
+.emoji-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+  max-height:200px;overflow-y:auto;padding:6px;
+}
+.emoji-opt{
+  font-size:22px;border:none;background:none;cursor:pointer;
+  border-radius:8px;padding:4px;text-align:center;
+  transition:background .1s;
+}
+.emoji-opt:hover{background:#f1f5f9;}
+.emoji-opt.selected{background:#e0e7ff;}
+</style>
+
+<!-- ЕЛЕМЕНТИ МОДАЛ -->
+<div class="modal-overlay" id="elementsModal">
+  <div class="modal" style="width:min(96vw,420px);max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+    
+    <!-- Header -->
+    <div style="padding:18px 18px 12px;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#1e293b">📋 Номенклатура</h3>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button type="button" onclick="toggleElemManageMode()" title="Керування" style="background:#f1f5f9;box-shadow:none;color:#64748b;font-size:14px;padding:8px 10px;border-radius:10px;line-height:1;">⚙️</button>
+          <button onclick="closeModal('elementsModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:24px;padding:2px 6px;line-height:1;">×</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Групи зберігаються • кількість очищається для нового проєкту • ↔ бере метри з периметра</div>
+    </div>
+
+    <div style="padding:8px 16px 0;flex-shrink:0;">
+      <button type="button" onclick="fillAllMeterItemsFromPerimeter()" style="width:100%;background:linear-gradient(135deg,#10b981,#34d399);box-shadow:0 4px 14px rgba(16,185,129,.22);font-size:13px;padding:10px;border-radius:12px;">
+        ↔ Заповнити всі елементи у метрах з периметра
+      </button>
+    </div>
+    <div style="padding:8px 16px 0;display:flex;gap:8px;flex-shrink:0;">
+      <button type="button" id="compactAddGroupBtn" onclick="toggleAddGroupPanel()" style="width:100%;background:linear-gradient(135deg,#2563eb,#6366f1);box-shadow:0 4px 14px rgba(37,99,235,.22);font-size:13px;padding:10px;border-radius:12px;">
+        + Група
+      </button>
+    </div>
+    <div id="addGroupPanel" style="display:none;padding:8px 16px 0;flex-shrink:0;">
+      <div class="em-add-row">
+        <input class="em-add-name" id="newGroupName" placeholder="Назва групи…" onkeydown="if(event.key==='Enter')addGroup()">
+        <button class="em-add-btn" onclick="addGroup()">Додати</button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="elemList" style="flex:1;overflow-y:auto;padding:12px 16px;"></div>
+<!-- Buttons -->
+    <div style="padding:10px 16px 16px;display:flex;gap:8px;flex-shrink:0;">
+      <button type="button" style="flex:1" onclick="closeModal('elementsModal')">✓ Готово</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- EMOJI PICKER MODAL -->
+<div class="modal-overlay" id="emojiModal">
+  <div class="modal" style="width:min(96vw,340px);padding:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h3 style="margin:0;font-size:1rem;font-weight:800;">Вибір іконки</h3>
+      <button onclick="closeModal('emojiModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:22px;padding:2px 6px;line-height:1;">×</button>
+    </div>
+    <div class="emoji-grid" id="emojiGrid"></div>
+  </div>
+</div>
+
+<!-- EDIT ELEMENT MODAL -->
+<div class="modal-overlay" id="editElemModal">
+  <div class="modal" style="width:min(96vw,360px);padding:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:1rem;font-weight:800;">✏️ Редагувати елемент</h3>
+      <button onclick="closeModal('editElemModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:22px;padding:2px 6px;line-height:1;">×</button>
+    </div>
+    <input type="text" id="editElemName" placeholder="Назва елемента"
+      style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-weight:600;margin-bottom:10px;background:#fff;">
+    <label style="font-size:12px;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">Група</label>
+    <select id="editElemGroup" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-weight:600;margin-bottom:14px;background:#fff;"></select>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" onclick="moveElemDir(_editingElemId,-1)" style="flex:1;background:#f1f5f9;box-shadow:none;color:#475569;">↑ Вгору</button>
+      <button type="button" onclick="moveElemDir(_editingElemId,1)" style="flex:1;background:#f1f5f9;box-shadow:none;color:#475569;">↓ Вниз</button>
+    </div>
+    <button type="button" style="width:100%" onclick="saveElemEdit()">✓ Зберегти</button>
+    <button type="button" id="deleteElemBtn" style="width:100%;margin-top:8px;background:#fee2e2;box-shadow:none;color:#dc2626;" onclick="deleteElemFromEdit()">🗑 Видалити елемент</button>
+  </div>
+</div>
+
+<!-- EDIT GROUP MODAL -->
+<div class="modal-overlay" id="editGroupModal">
+  <div class="modal" style="width:min(96vw,360px);padding:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:1rem;font-weight:800;">✏️ Редагувати групу</h3>
+      <button onclick="closeModal('editGroupModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:22px;padding:2px 6px;line-height:1;">×</button>
+    </div>
+    <input type="text" id="editGroupName" placeholder="Назва групи"
+      style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-weight:600;margin-bottom:14px;background:#fff;">
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" onclick="moveGroupDir(_editingGroupId,-1)" style="flex:1;background:#f1f5f9;box-shadow:none;color:#475569;">↑ Вгору</button>
+      <button type="button" onclick="moveGroupDir(_editingGroupId,1)" style="flex:1;background:#f1f5f9;box-shadow:none;color:#475569;">↓ Вниз</button>
+    </div>
+    <button type="button" style="width:100%" onclick="saveGroupEdit()">✓ Зберегти</button>
+    <button type="button" id="deleteGroupBtn" style="width:100%;margin-top:8px;background:#fee2e2;box-shadow:none;color:#dc2626;" onclick="deleteGroupFromEdit()">🗑 Видалити групу</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// НОМЕНКЛАТУРА — групи + елементи (кастомні)
+// ════════════════════════════════════════════
+
+// Структура груп:   [{id, name}]
+// Структура елементів: [{id, groupId, icon, name, qty, unit}]
+let elemGroups = [];
+let elemItems  = [];
+let _editingIconId    = null;  // id елемента при зміні іконки
+let _editingElemId    = null;  // id елемента при редагуванні/переміщенні
+let _editingGroupId   = null;  // id групи при редагуванні/переміщенні
+let _activeAddGroupId = null;  // яка група зараз показує форму додавання
+let _ungroupedCollapsed = false;
+let _newElemIcon      = '🔧';
+let elemManageMode    = false;
+
+const EMOJI_LIST = [
+  '🔧','🔩','📐','📏','💡','🔦','🚿','🪟','🚪','🛁',
+  '⚡','🔌','💧','🌀','❄️','🔥','🎯','📦','🧱','🏗️',
+  '⬜','⬛','◻','◼','🔴','🟠','🟡','🟢','🔵','🟣',
+  '▬','▭','T','⌐','∟','═','⊤','⊙','◎','○',
+  '●','◈','⊟','≡','〜','⬡','✂️','🪚','🔨','⚙️',
+  '🏠','🏢','🌟','✨','💎','🎨','🪄','📋','📌','🗂️',
+];
+
+// ── Зберігаємо/відновлюємо поряд із основним стейтом ─
+// Номенклатура (групи й елементи) зберігається назавжди — окремий
+// "Скинути все" не торкається elemItems/elemGroups, тож список потрібно
+// сформувати лише один раз і він залишається для всіх наступних замірів.
+const _origSaveState = saveState;
+window.saveState = function(){
+  localStorage.setItem('ceiling_v18', JSON.stringify({
+    pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,
+    diagonalOverrides,notes,elemItems,elemGroups
+  }));
+};
+const _origLoadState = loadState;
+window.loadState = function(){
+  try{
+    const s = localStorage.getItem('ceiling_v18');
+    if(!s) return;
+    const d = JSON.parse(s);
+    pts=d.pts||[]; lengths=d.lengths||[]; realPts=d.realPts||[];
+    closed=!!d.closed; diagonals=d.diagonals||[]; diagonalOverrides=d.diagonalOverrides||{};
+    circleMode=!!d.circleMode; circleDiamCm=d.circleDiamCm||0; notes=d.notes||[];
+    elemItems  = d.elemItems  || [];
+    elemGroups = d.elemGroups || [];
+    elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; });
+    draw();
+    updateElemBadge();
+  }catch(e){}
+};
+loadState();
+
+// ── Відкрити модал ───────────────────────────────────
+function openElementsModal(){
+  renderElemList();
+  document.getElementById('elementsModal').classList.add('open');
+  // Якщо груп ще немає — одразу пропонуємо створити першу
+  if(!elemGroups.length){
+    setTimeout(()=>document.getElementById('newGroupName')?.focus(),200);
+  }
+}
+
+// ── Рендер списку (групи + елементи без групи) ───────
+function renderElemList(){
+  const el = document.getElementById('elemList');
+  if(!elemGroups.length && !elemItems.length){
+    el.innerHTML = `<div style="text-align:center;padding:30px 16px;color:#94a3b8;">
+      <div style="font-size:36px;margin-bottom:8px">📋</div>
+      <div style="font-weight:700;font-size:14px;">Номенклатура порожня</div>
+      <div style="font-size:12px;margin-top:4px;">Створіть групу знизу, напр. «Периметр», «Карнизи»…</div>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  elemGroups.forEach(g=>{
+    const items = elemItems.filter(it=>it.groupId===g.id);
+    html += renderGroupCard(g, items, false);
+  });
+
+  const validGroupIds = elemGroups.map(g=>g.id);
+  const ungrouped = elemItems.filter(it=>!it.groupId || !validGroupIds.includes(it.groupId));
+  if(ungrouped.length){
+    html += renderGroupCard({id:'', name:'Без групи'}, ungrouped, true);
+  }
+
+  el.innerHTML = html;
+}
+
+function renderGroupCard(g, items, isUngrouped){
+  const addOpen = _activeAddGroupId === g.id;
+  const collapsed = isUngrouped ? _ungroupedCollapsed : !!g.collapsed;
+  const toggleFn = isUngrouped ? `toggleUngroupedCollapse()` : `toggleGroupCollapse('${g.id}')`;
+  return `
+    <div class="grp-card">
+      <div class="grp-header">
+        <button class="grp-toggle" onclick="${toggleFn}" title="${collapsed?'Розгорнути':'Згорнути'}">${collapsed?'+':'−'}</button>
+        <div class="grp-name">${isUngrouped?'🗂️ ':'📁 '}${g.name}</div>
+        <div class="grp-count">${items.length}</div>
+        ${isUngrouped?'':`<button class="grp-add" onclick="toggleGroupAddRow('${g.id}')" title="Додати елемент">+</button>`}
+        ${isUngrouped?'':`<button class="grp-edit" onclick="openEditGroupModal('${g.id}')" title="Редагувати/перемістити групу">✏️</button>`}
+      </div>
+      ${collapsed ? '' : `
+      <div class="grp-body">
+        ${items.length ? items.map(it=>renderItemRow(it)).join('') : `<div class="grp-empty">Поки немає елементів</div>`}
+        ${isUngrouped?'':`
+        <div class="grp-add-row ${addOpen?'open':''}" id="grpAddRow_${g.id}">
+          <input type="text" id="grpAddInput_${g.id}" placeholder="Назва елемента…" onkeydown="if(event.key==='Enter')addElemToGroup('${g.id}')">
+          <button onclick="addElemToGroup('${g.id}')">+ Додати</button>
+        </div>`}
+      </div>`}
+    </div>
+  `;
+}
+
+// ── Згорнути / розгорнути групу ───────────────────────
+function toggleGroupCollapse(id){
+  const g = elemGroups.find(x=>x.id===id);
+  if(!g) return;
+  g.collapsed = !g.collapsed;
+  renderElemList();
+  saveState();
+}
+function toggleUngroupedCollapse(){
+  _ungroupedCollapsed = !_ungroupedCollapsed;
+  renderElemList();
+}
+
+function renderItemRow(it){
+  return `
+    <div class="em-row" id="emrow_${it.id}">
+      <div class="em-icon" onclick="openEmojiPickerForItem('${it.id}')" title="Змінити іконку">${it.icon}</div>
+      <div class="em-name" title="${it.name}">${it.name}</div>
+      <input class="em-qty-input" type="number" inputmode="decimal" step="any" placeholder="0"
+        value="${it.qty ? it.qty : ''}"
+        oninput="updateElemQty('${it.id}', this.value)">
+      <button class="em-unit" onclick="setElemFromPerimeter('${it.id}')" title="Підставити периметр">↔</button>
+      <button class="em-unit" onclick="toggleElemUnit('${it.id}')" title="Змінити одиницю">${it.unit||'шт'}</button>
+      <button class="em-edit" onclick="openEditElemModal('${it.id}')" title="Редагувати/перемістити">✏️</button>
+    </div>
+  `;
+}
+
+// ── Групи ──────────────────────────────────────────
+
+function toggleAddGroupPanel(){
+  const p = document.getElementById('addGroupPanel');
+  if(!p) return;
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  if(!open){
+    setTimeout(()=>document.getElementById('newGroupName')?.focus(),80);
+  }
+}
+
+function toggleElemManageMode(){
+  elemManageMode = !elemManageMode;
+  document.body.classList.toggle('elem-manage', elemManageMode);
+  renderElemList();
+}
+
+function addGroup(){
+  const inp = document.getElementById('newGroupName');
+  const name = inp.value.trim();
+  if(!name){ inp.focus(); return; }
+  const id = 'g' + Date.now();
+  elemGroups.push({ id, name });
+  inp.value = '';
+  const p = document.getElementById('addGroupPanel');
+  if(p) p.style.display = 'none';
+  _activeAddGroupId = id; // одразу відкриваємо форму додавання елементів у нову групу
+  renderElemList();
+  saveState();
+  setTimeout(()=>document.getElementById('grpAddInput_'+id)?.focus(),50);
+}
+
+function toggleGroupAddRow(groupId){
+  const g = elemGroups.find(x=>x.id===groupId);
+  if(g && g.collapsed){ g.collapsed = false; saveState(); } // розгортаємо, якщо була згорнута
+  _activeAddGroupId = (_activeAddGroupId === groupId) ? null : groupId;
+  renderElemList();
+  if(_activeAddGroupId === groupId){
+    setTimeout(()=>document.getElementById('grpAddInput_'+groupId)?.focus(),50);
+  }
+}
+
+// ── Додати елемент у конкретну групу ──────────────────
+function addElemToGroup(groupId){
+  const inp = document.getElementById('grpAddInput_'+groupId);
+  const name = inp ? inp.value.trim() : '';
+  if(!name){ if(inp) inp.focus(); return; }
+  const id = 'e' + Date.now();
+  elemItems.push({ id, groupId, icon: _newElemIcon, name, qty: 0, unit: 'шт' });
+  _newElemIcon = '🔧';
+  _activeAddGroupId = groupId; // лишаємо форму відкритою — зручно додавати декілька підряд
+  renderElemList();
+  updateElemBadge();
+  saveState();
+  setTimeout(()=>document.getElementById('grpAddInput_'+groupId)?.focus(),50);
+}
+
+// ── Кількість: пряме введення у полі рядка ────────────
+function updateElemQty(id, value){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  const normalized = String(value).replace(',', '.');
+  const val = parseFloat(normalized);
+  it.qty = isNaN(val) ? 0 : val;
+  updateElemBadge();
+  saveState();
+}
+
+// ── Перемкнути одиницю вимірювання (шт ⇄ м) ───────────
+function toggleElemUnit(id){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  it.unit = (it.unit === 'м') ? 'шт' : 'м';
+  renderElemList();
+  saveState();
+}
+
+// ── Редагувати / перемістити елемент ──────────────────
+function openEditElemModal(id){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  _editingElemId = id;
+  document.getElementById('editElemName').value = it.name;
+  const validGroupIds = elemGroups.map(g=>g.id);
+  const currentGroupId = (it.groupId && validGroupIds.includes(it.groupId)) ? it.groupId : '';
+  const sel = document.getElementById('editElemGroup');
+  sel.innerHTML = '<option value="">🗂️ Без групи</option>' +
+    elemGroups.map(g=>`<option value="${g.id}">📁 ${g.name}</option>`).join('');
+  sel.value = currentGroupId;
+  resetDeleteBtn('deleteElemBtn', '🗑 Видалити елемент');
+  document.getElementById('editElemModal').classList.add('open');
+}
+
+function saveElemEdit(){
+  const it = elemItems.find(x=>x.id===_editingElemId);
+  if(!it) return;
+  const name = document.getElementById('editElemName').value.trim();
+  if(!name){ showToast('Введіть назву'); return; }
+  it.name = name;
+  it.groupId = document.getElementById('editElemGroup').value || null;
+  renderElemList();
+  updateElemBadge();
+  saveState();
+  closeModal('editElemModal');
+}
+
+// Переміщує елемент вгору/вниз у межах його групи (dir: -1 вгору, 1 вниз)
+function moveElemDir(id, dir){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  const validGroupIds = elemGroups.map(g=>g.id);
+  const key = x => (x.groupId && validGroupIds.includes(x.groupId)) ? x.groupId : '__ungrouped__';
+  const k = key(it);
+  const idxList = elemItems.map((x,i)=>({x,i})).filter(o=>key(o.x)===k).map(o=>o.i);
+  const posInGroup = idxList.indexOf(elemItems.indexOf(it));
+  const swapPos = posInGroup + dir;
+  if(swapPos<0 || swapPos>=idxList.length) return;
+  const idxA = idxList[posInGroup], idxB = idxList[swapPos];
+  const tmp = elemItems[idxA]; elemItems[idxA] = elemItems[idxB]; elemItems[idxB] = tmp;
+  renderElemList();
+  saveState();
+}
+
+// ── Редагувати / перемістити групу ────────────────────
+function openEditGroupModal(id){
+  const g = elemGroups.find(x=>x.id===id);
+  if(!g) return;
+  _editingGroupId = id;
+  document.getElementById('editGroupName').value = g.name;
+  resetDeleteBtn('deleteGroupBtn', '🗑 Видалити групу');
+  document.getElementById('editGroupModal').classList.add('open');
+}
+
+function saveGroupEdit(){
+  const g = elemGroups.find(x=>x.id===_editingGroupId);
+  if(!g) return;
+  const name = document.getElementById('editGroupName').value.trim();
+  if(!name){ showToast('Введіть назву групи'); return; }
+  g.name = name;
+  renderElemList();
+  saveState();
+  closeModal('editGroupModal');
+}
+
+function moveGroupDir(id, dir){
+  const idx = elemGroups.findIndex(g=>g.id===id);
+  if(idx<0) return;
+  const swapIdx = idx + dir;
+  if(swapIdx<0 || swapIdx>=elemGroups.length) return;
+  const tmp = elemGroups[idx]; elemGroups[idx] = elemGroups[swapIdx]; elemGroups[swapIdx] = tmp;
+  renderElemList();
+  saveState();
+}
+
+// ── Видалення прямо з вікна редагування ───────────────
+// Без window.confirm(): деякі WebView-перегляди (напр. цей Code-перегляд)
+// не показують системні діалоги, тож підтвердження робимо подвійним тапом
+// через спільний хелпер confirmTap() (визначений на початку файлу).
+
+function resetDeleteBtn(btnId, originalText){
+  const btn = document.getElementById(btnId);
+  if(btn){
+    clearTimeout(btn._confirmTimer);
+    btn.dataset.confirmArmed = '0';
+    btn.innerHTML = originalText;
+    btn.dataset.origText = originalText;
+  }
+}
+
+function deleteElemFromEdit(){
+  const btn = document.getElementById('deleteElemBtn');
+  confirmTap(btn, '⚠️ Натисніть ще раз для підтвердження', function(){
+    const id = _editingElemId;
+    elemItems = elemItems.filter(x=>x.id!==id);
+    renderElemList();
+    updateElemBadge();
+    saveState();
+    closeModal('editElemModal');
+  });
+}
+
+function deleteGroupFromEdit(){
+  const btn = document.getElementById('deleteGroupBtn');
+  confirmTap(btn, '⚠️ Натисніть ще раз для підтвердження', function(){
+    const id = _editingGroupId;
+    elemItems  = elemItems.filter(it=>it.groupId!==id);
+    elemGroups = elemGroups.filter(x=>x.id!==id);
+    renderElemList();
+    updateElemBadge();
+    saveState();
+    closeModal('editGroupModal');
+  });
+}
+
+// ── Emoji Picker ──────────────────────────────────────
+function openEmojiPickerForItem(id){
+  _editingIconId = id;
+  const it = elemItems.find(x=>x.id===id);
+  buildEmojiGrid(it ? it.icon : null);
+  document.getElementById('emojiModal').classList.add('open');
+}
+function buildEmojiGrid(currentEmoji){
+  document.getElementById('emojiGrid').innerHTML = EMOJI_LIST.map(e=>`
+    <button class="emoji-opt ${e===currentEmoji?'selected':''}" onclick="selectEmoji('${e}')">${e}</button>
+  `).join('');
+}
+function selectEmoji(e){
+  if(_editingIconId){
+    const it = elemItems.find(x=>x.id===_editingIconId);
+    if(it){
+      it.icon = e;
+      renderElemList();
+      saveState();
+    }
+  }
+  closeModal('emojiModal');
+}
+
+// ── Видалити / Очистити ───────────────────────────────
+function getProjectPerimeterMeters(){
+  let perCm = 0;
+  try{
+    if(Array.isArray(lengths) && lengths.length){
+      perCm = lengths.reduce((a,b)=>a+(parseFloat(b)||0),0);
+    }
+  }catch(e){}
+  if(!perCm){
+    const v = parseFloat((document.getElementById('per')?.textContent || '0').replace(',', '.'));
+    if(!isNaN(v)) return v;
+  }
+  return perCm/100;
+}
+
+function setElemFromPerimeter(id){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  const perM = getProjectPerimeterMeters();
+  if(!perM || perM <= 0){ showToast('Спочатку побудуйте контур і введіть розміри сторін'); return; }
+  it.unit = 'м';
+  it.qty = Math.round(perM * 100) / 100;
+  renderElemList();
+  updateElemBadge();
+  saveState();
+}
+
+function fillAllMeterItemsFromPerimeter(){
+  const perM = getProjectPerimeterMeters();
+  if(!perM || perM <= 0){ showToast('Спочатку побудуйте контур і введіть розміри сторін'); return; }
+  let count = 0;
+  elemItems.forEach(it=>{
+    if((it.unit || 'шт') === 'м'){
+      it.qty = Math.round(perM * 100) / 100;
+      count++;
+    }
+  });
+  if(!count){ showToast('Немає елементів з одиницею “м”. Натисніть на одиницю “шт”, щоб перемкнути на “м”.'); return; }
+  renderElemList();
+  updateElemBadge();
+  saveState();
+}
+
+function clearElemQuantities(){
+  if(!elemItems.length) return;
+  elemItems.forEach(it=>{ it.qty = 0; });
+  renderElemList();
+  updateElemBadge();
+  saveState();
+}
+
+function clearAllElems(btn){
+  if(!elemItems.length && !elemGroups.length){
+    showToast('Номенклатура вже порожня');
+    return;
+  }
+
+  confirmTap(btn, '⚠️ Ще раз — видалити ВСЮ номенклатуру', function(){
+    elemItems  = [];
+    elemGroups = [];
+    _activeAddGroupId = null;
+    _ungroupedCollapsed = false;
+
+    renderElemList();
+    updateElemBadge();
+    saveState();
+
+    setTimeout(()=>{
+      const input = document.getElementById('newGroupName');
+      if(input) input.focus();
+    },80);
+  });
+}
+
+// ── Бейдж на кнопці ──────────────────────────────────
+function updateElemBadge(){
+  const total = elemItems.filter(it=>it.qty>0).length;
+  const b = document.getElementById('elemBadge');
+  if(b){ b.textContent = total; b.style.display = total>0 ? 'inline' : 'none'; }
+}
+</script>
+
+<!-- ── SUPABASE ІНТЕГРАЦІЯ ────────────────────────────── -->
+<script>
+const SUPABASE_URL  = 'https://twuvpnxkfmpbzoprcgyd.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dXZwbnhrZm1wYnpvcHJjZ3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTA4ODAsImV4cCI6MjA5NzQ2Njg4MH0.UjdmQ2_bhwDEOpo8sCsf4kxVIwp1avrvt-xpVp6j2uk';
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let _sbUser = null;
+let _authMode = 'login'; // 'login' | 'register'
+
+// ── Показати / сховати екран авторизації ──────────────
+function showAuthScreen(){ document.getElementById('authScreen').classList.remove('hidden'); }
+function hideAuthScreen(){ document.getElementById('authScreen').classList.add('hidden'); }
+
+function toggleAuthMode(){
+  _authMode = _authMode === 'login' ? 'register' : 'login';
+  const isReg = _authMode === 'register';
+  document.getElementById('authSubtitle').textContent = isReg ? 'Реєстрація нового замірника' : 'Вхід для замірника';
+  document.getElementById('authBtn').textContent = isReg ? 'Зареєструватися' : 'Увійти';
+  document.getElementById('authToggleText').textContent = isReg ? 'Вже є акаунт?' : 'Немає акаунта?';
+  document.querySelector('#authScreen .auth-toggle a').textContent = isReg ? ' Увійти' : ' Реєстрація';
+  document.getElementById('authNameField').style.display = isReg ? 'block' : 'none';
+  document.getElementById('authError').style.display = 'none';
+}
+
+function setAuthError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doAuth(){
+  const btn = document.getElementById('authBtn');
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if(!email || !password){ setAuthError('Введіть email і пароль'); return; }
+  btn.disabled = true;
+  btn.textContent = '...';
+  document.getElementById('authError').style.display = 'none';
+
+  try {
+    let result;
+    if(_authMode === 'register'){
+      const name = document.getElementById('authName').value.trim() || email.split('@')[0];
+      result = await _sb.auth.signUp({ email, password, options:{ data:{ name } } });
+    } else {
+      result = await _sb.auth.signInWithPassword({ email, password });
+    }
+    if(result.error) throw result.error;
+    if(_authMode === 'register' && result.data?.user && !result.data.session){
+      setAuthError('Перевірте email — надіслано лист для підтвердження');
+      btn.disabled = false;
+      btn.textContent = 'Зареєструватися';
+      return;
+    }
+  } catch(e){
+    const msg = e.message || 'Помилка';
+    setAuthError(
+      msg.includes('Invalid login') ? 'Невірний email або пароль' :
+      msg.includes('already registered') ? 'Цей email вже зареєстрований' :
+      msg.includes('Password') ? 'Пароль мінімум 6 символів' : msg
+    );
+    btn.disabled = false;
+    btn.textContent = _authMode === 'register' ? 'Зареєструватися' : 'Увійти';
+  }
+}
+
+// ── Показати юзера в шапці ─────────────────────────────
+function setUserPill(user){
+  const name = user.user_metadata?.name || user.email.split('@')[0];
+  document.getElementById('userPillName').textContent = name;
+  document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
+}
+
+// ── Sync badge ─────────────────────────────────────────
+function showSync(text){
+  const b = document.getElementById('syncBadge');
+  document.getElementById('syncText').textContent = text;
+  b.classList.add('show');
+}
+function hideSync(){ document.getElementById('syncBadge').classList.remove('show'); }
+
+// ── Завантажити проєкти з Supabase ────────────────────
+async function loadProjectsFromCloud(){
+  if(!_sbUser) return;
+  showSync('Завантаження...');
+  try{
+    const { data, error } = await _sb.from('projects')
+      .select('*').order('created_at', { ascending: false });
+    if(error) throw error;
+
+    // конвертуємо в локальний формат
+    const converted = data.map(p=>({
+      id: p.id,
+      _dbId: p.id,
+      name: p.name,
+      addr: p.addr||'',
+      phone: p.phone||'',
+      comment: p.comment||'',
+      area: p.area||'',
+      per: p.per||'',
+      inC: p.in_corners||'',
+      outC: p.out_corners||'',
+      thumb: p.thumb||'',
+      date: p.created_at ? new Date(p.created_at).toLocaleDateString('uk-UA') : '',
+      state: typeof p.state === 'string' ? p.state : JSON.stringify(p.state||{})
+    }));
+
+    // зберігаємо в localStorage як кеш
+    localStorage.setItem('ceiling_projects', JSON.stringify(converted));
+    document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
+  } catch(e){
+    console.error('loadCloud error', e);
+    document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
+  }
+  hideSync();
+}
+
+// ── Зберегти проєкт у Supabase (override saveProject) ─
+const _origSaveProject = saveProject;
+window.saveProject = async function(){
+  // Спочатку зберігаємо локально через оригінальну функцію
+  // але перехоплюємо щоб ще й у Supabase відправити
+  const name    = document.getElementById('projName').value.trim();
+  const addr    = document.getElementById('projAddr').value.trim();
+  const phone   = document.getElementById('projPhone').value.trim();
+  const comment = document.getElementById('projComment').value.trim();
+  if(!name){ showToast('Введіть назву проєкту'); return; }
+
+  // мініатюра
+  const thumb = document.getElementById('cv').toDataURL('image/jpeg', 0.35);
+
+  const areaVal = document.getElementById('area').textContent;
+  const perVal  = document.getElementById('per').textContent;
+  const inCVal  = document.getElementById('inCorners').textContent;
+  const outCVal = document.getElementById('outCorners').textContent;
+
+  const stateObj = {pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,diagonalOverrides,notes,elemItems,elemGroups};
+
+  // локальний запис
+  const localId = Date.now();
+  const localProj = {
+    id: localId, name, addr, phone, comment,
+    area: areaVal, per: perVal, inC: inCVal, outC: outCVal,
+    date: new Date().toLocaleDateString('uk-UA'),
+    thumb, state: JSON.stringify(stateObj)
+  };
+  const projects = getProjects();
+  projects.unshift(localProj);
+  setProjects(projects);
+
+  _currentProjName = name; _currentProjAddr = addr;
+  _currentProjPhone = phone; _currentProjComment = comment;
+
+  closeModal('saveProjectModal');
+  showToast('✓ Збережено');
+
+  // хмарний запис
+  if(_sbUser){
+    showSync('Збереження...');
+    try{
+      const { data, error } = await _sb.from('projects').insert({
+        user_id: _sbUser.id,
+        name, addr, phone, comment,
+        area: areaVal, per: perVal,
+        in_corners: inCVal, out_corners: outCVal,
+        thumb, state: stateObj
+      }).select().single();
+      if(error) throw error;
+      // оновлюємо локальний id на db id
+      localProj._dbId = data.id;
+      setProjects(getProjects().map(p=> p.id===localId ? {...p, _dbId: data.id} : p));
+      document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
+    } catch(e){
+      console.error('saveCloud error', e);
+      document.getElementById('cloudStatus').textContent = '⚠️ збережено офлайн';
+    }
+    hideSync();
+  }
+};
+
+// ── Видалити проєкт + з хмари ─────────────────────────
+const _origDeleteProject = window.deleteProject;
+window.deleteProject = async function(id, btn){
+  const p = getProjects().find(x=> x.id===id);
+  confirmTap(btn, '⚠️ Ще раз — видалити', async function(){
+    setProjects(getProjects().filter(x=>x.id!==id));
+    renderProjects();
+    if(_sbUser && p && p._dbId){
+      await _sb.from('projects').delete().eq('id', p._dbId);
+    }
+  });
+};
+
+// ── Вийти з акаунта ────────────────────────────────────
+async function signOut(){
+  await _sb.auth.signOut();
+  localStorage.removeItem('ceiling_projects');
+  showAuthScreen();
+}
+
+// ── Додати кнопку "Вийти" в модалку проєктів ──────────
+const _origOpenProjectsModal = window.openProjectsModal;
+window.openProjectsModal = function(){
+  renderProjects();
+  // додаємо кнопку виходу якщо ще немає
+  const modal = document.getElementById('projectsModal');
+  if(modal && !modal.querySelector('#signOutBtn')){
+    const hdr = modal.querySelector('h3');
+    if(hdr){
+      const outBtn = document.createElement('button');
+      outBtn.id = 'signOutBtn';
+      outBtn.textContent = 'Вийти';
+      outBtn.onclick = ()=>{ closeModal('projectsModal'); signOut(); };
+      outBtn.style.cssText = 'background:none;box-shadow:none;color:#dc2626;font-size:12px;font-weight:700;padding:4px 8px;border-radius:8px;border:1.5px solid #fecaca';
+      hdr.parentNode.insertBefore(outBtn, hdr.nextSibling);
+    }
+  }
+  modal.classList.add('open');
+};
+
+// ── Auth state listener ────────────────────────────────
+_sb.auth.onAuthStateChange(async (event, session) => {
+  if(session?.user){
+    _sbUser = session.user;
+    setUserPill(_sbUser);
+    hideAuthScreen();
+    await loadProjectsFromCloud();
+    // якщо є локальні офлайн-проєкти — вже показуються через localStorage
+  } else {
+    _sbUser = null;
+    showAuthScreen();
+  }
+});
+
+// ── Перевірити сесію при старті ───────────────────────
+(async()=>{
+  const { data } = await _sb.auth.getSession();
+  if(!data.session){
+    showAuthScreen();
+  }
+})();
+</script>
+
+</html>
