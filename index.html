@@ -3124,15 +3124,30 @@ async function loadProjectsFromCloud(){
 // ── Зберегти проєкт у Supabase (override saveProject) ─
 const _origSaveProject = saveProject;
 window.saveProject = async function(){
-  // Спочатку зберігаємо локально через оригінальну функцію
-  // але перехоплюємо щоб ще й у Supabase відправити
   const name    = document.getElementById('projName').value.trim();
   const addr    = document.getElementById('projAddr').value.trim();
   const phone   = document.getElementById('projPhone').value.trim();
   const comment = document.getElementById('projComment').value.trim();
-  if(!name){ showToast('Введіть назву проєкту'); return; }
 
-  // мініатюра
+  if(!name){
+    showToast('Введіть назву проєкту');
+    return;
+  }
+
+  // Завжди перевіряємо поточного користувача напряму перед записом.
+  // Це виправляє ситуацію, коли _sbUser ще null після відкриття сайту,
+  // хоча сесія Supabase вже є.
+  const { data: userData, error: userError } = await _sb.auth.getUser();
+
+  if(userError || !userData?.user){
+    console.error('AUTH ERROR:', userError);
+    showToast('Помилка: користувач не авторизований', 5000);
+    showAuthScreen();
+    return;
+  }
+
+  _sbUser = userData.user;
+
   const thumb = document.getElementById('cv').toDataURL('image/jpeg', 0.35);
 
   const areaVal = document.getElementById('area').textContent;
@@ -3140,46 +3155,61 @@ window.saveProject = async function(){
   const inCVal  = document.getElementById('inCorners').textContent;
   const outCVal = document.getElementById('outCorners').textContent;
 
-  const stateObj = {pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,diagonalOverrides,notes,elemItems,elemGroups};
-
-  // локальний запис
-  const localId = Date.now();
-  const localProj = {
-    id: localId, name, addr, phone, comment,
-    area: areaVal, per: perVal, inC: inCVal, outC: outCVal,
-    date: new Date().toLocaleDateString('uk-UA'),
-    thumb, state: JSON.stringify(stateObj)
+  const stateObj = {
+    pts, lengths, realPts, closed, diagonals,
+    circleMode, circleDiamCm, diagonalOverrides,
+    notes, elemItems, elemGroups
   };
-  const projects = getProjects();
-  projects.unshift(localProj);
-  setProjects(projects);
 
-  _currentProjName = name; _currentProjAddr = addr;
-  _currentProjPhone = phone; _currentProjComment = comment;
+  showSync('Збереження в хмару...');
 
-  closeModal('saveProjectModal');
-  showToast('✓ Збережено');
+  try{
+    const { data, error } = await _sb.from('projects').insert({
+      user_id: _sbUser.id,
+      name: name,
+      addr: addr,
+      phone: phone,
+      comment: comment,
+      area: areaVal,
+      per: perVal,
+      in_corners: inCVal,
+      out_corners: outCVal,
+      thumb: thumb,
+      state: stateObj
+    }).select().single();
 
-  // хмарний запис
-  if(_sbUser){
-    showSync('Збереження...');
-    try{
-      const { data, error } = await _sb.from('projects').insert({
-        user_id: _sbUser.id,
-        name, addr, phone, comment,
-        area: areaVal, per: perVal,
-        in_corners: inCVal, out_corners: outCVal,
-        thumb, state: stateObj
-      }).select().single();
-      if(error) throw error;
-      // оновлюємо локальний id на db id
-      localProj._dbId = data.id;
-      setProjects(getProjects().map(p=> p.id===localId ? {...p, _dbId: data.id} : p));
-      document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
-    } catch(e){
-      console.error('saveCloud error', e);
-      document.getElementById('cloudStatus').textContent = '⚠️ збережено офлайн';
-    }
+    if(error) throw error;
+
+    const localProj = {
+      id: data.id,
+      _dbId: data.id,
+      name, addr, phone, comment,
+      area: areaVal,
+      per: perVal,
+      inC: inCVal,
+      outC: outCVal,
+      date: data.created_at ? new Date(data.created_at).toLocaleDateString('uk-UA') : new Date().toLocaleDateString('uk-UA'),
+      thumb,
+      state: JSON.stringify(stateObj)
+    };
+
+    const projects = getProjects();
+    projects.unshift(localProj);
+    setProjects(projects);
+
+    _currentProjName = name;
+    _currentProjAddr = addr;
+    _currentProjPhone = phone;
+    _currentProjComment = comment;
+
+    closeModal('saveProjectModal');
+    document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
+    showToast('✓ Збережено в хмару');
+  } catch(e){
+    console.error('SUPABASE SAVE ERROR:', e);
+    document.getElementById('cloudStatus').textContent = '⚠️ помилка хмари';
+    showToast('Помилка Supabase: ' + (e.message || 'невідома помилка'), 7000);
+  } finally {
     hideSync();
   }
 };
@@ -3240,8 +3270,18 @@ _sb.auth.onAuthStateChange(async (event, session) => {
 
 // ── Перевірити сесію при старті ───────────────────────
 (async()=>{
-  const { data } = await _sb.auth.getSession();
-  if(!data.session){
+  const { data, error } = await _sb.auth.getSession();
+  if(error){
+    console.error('SESSION ERROR:', error);
+    showAuthScreen();
+    return;
+  }
+  if(data.session?.user){
+    _sbUser = data.session.user;
+    setUserPill(_sbUser);
+    hideAuthScreen();
+    await loadProjectsFromCloud();
+  } else {
     showAuthScreen();
   }
 })();
