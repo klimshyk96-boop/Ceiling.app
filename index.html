@@ -2216,11 +2216,11 @@ function renderProjects(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;padding:8px 6px;gap:6px;justify-content:center">
-        <button onclick="loadProject(${p.id})" style="
+        <button onclick="loadProject('${p.id}')" style="
           background:linear-gradient(135deg,#2563eb,#6366f1);
           border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;
           box-shadow:0 3px 8px rgba(37,99,235,.3)">Відкрити</button>
-        <button onclick="deleteProject(${p.id}, this)" style="
+        <button onclick="deleteProject('${p.id}', this)" style="
           background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
           color:#dc2626;border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;
           box-shadow:none">🗑</button>
@@ -2230,7 +2230,7 @@ function renderProjects(){
 }
 
 function loadProject(id){
-  const p = getProjects().find(p=>p.id===id);
+  const p = getProjects().find(p=>String(p.id)===String(id));
   if(!p) return;
   try{
     const d = JSON.parse(p.state);
@@ -2263,7 +2263,7 @@ function loadProject(id){
 
 function deleteProject(id, btn){
   confirmTap(btn, '⚠️ Ще раз — видалити', function(){
-    setProjects(getProjects().filter(p=>p.id!==id));
+    setProjects(getProjects().filter(p=>String(p.id)!==String(id)));
     renderProjects();
   });
 }
@@ -3219,7 +3219,7 @@ const _origDeleteProject = window.deleteProject;
 window.deleteProject = async function(id, btn){
   const p = getProjects().find(x=> x.id===id);
   confirmTap(btn, '⚠️ Ще раз — видалити', async function(){
-    setProjects(getProjects().filter(x=>x.id!==id));
+    setProjects(getProjects().filter(x=>String(x.id)!==String(id)));
     renderProjects();
     if(_sbUser && p && p._dbId){
       await _sb.from('projects').delete().eq('id', p._dbId);
