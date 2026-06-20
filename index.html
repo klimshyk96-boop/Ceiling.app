@@ -19,7 +19,44 @@
   &quot;orientation&quot;:&quot;portrait&quot;,
   &quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%232563eb'/%3E%3Crect x='32' y='32' width='128' height='128' rx='12' fill='none' stroke='white' stroke-width='12'/%3E%3Cline x1='32' y1='96' x2='160' y2='96' stroke='white' stroke-width='10'/%3E%3Cline x1='96' y1='32' x2='96' y2='160' stroke='white' stroke-width='10'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <title>Конструктор натяжної стелі v30 — компактні елементи</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Динамічне завантаження Supabase SDK ──────────────────
+// Якщо SDK вже є в localStorage-кеші — використовуємо його миттєво (офлайн).
+// Якщо є мережа — завантажуємо свіжу версію і кешуємо.
+(function(){
+  const CACHE_KEY = 'supabase_sdk_v2';
+  const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+
+  function injectSDK(code){
+    const s = document.createElement('script');
+    s.textContent = code;
+    document.head.appendChild(s);
+    window._supabaseSDKReady = true;
+  }
+
+  const cached = localStorage.getItem(CACHE_KEY);
+  if(cached){
+    try{ injectSDK(cached); }catch(e){ localStorage.removeItem(CACHE_KEY); }
+  }
+
+  // Завжди намагаємось оновити кеш у фоні
+  fetch(CDN)
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(code => {
+      localStorage.setItem(CACHE_KEY, code);
+      if(!window._supabaseSDKReady){
+        injectSDK(code);
+        // Перезапускаємо ініціалізацію Supabase після завантаження
+        if(typeof window._initSupabase === 'function') window._initSupabase();
+      }
+    })
+    .catch(() => {
+      if(!window._supabaseSDKReady){
+        console.warn('Supabase SDK недоступний і немає кешу — офлайн режим');
+      }
+    });
+})();
+</script>
 <style>
 /* ── AUTH SCREEN ─────────────────────────────────── */
 #authScreen{
@@ -1786,7 +1823,7 @@ async function saveToPhone(){
     if(diagLines.length){ H += 40 + diagLines.length*36 + 24; }
     if(badAngles.length){ H += 40 + badAngles.length*36 + 24; }
     if(hasNotes){ H += 40 + noteLines.length*36 + 24; }
-    if(elemLines.length){ H += 50 + elemGroupLineCount*40 + elemItemLineCount*46 + 40; }
+    if(elemLines.length){ H += 50 + elemGroupLineCount*40 + elemItemLineCount*60 + 80; }
 
     // запас висоти для великої кількості елементів, щоб останні групи не обрізались
     H += 360;
@@ -1930,7 +1967,8 @@ async function saveToPhone(){
 
     // — елементи —
     if(elemLines.length){
-      y = drawSection(c,'ЕЛЕМЕНТИ',y,W,PAD);
+      y = drawSection(c,'ЕЛЕМЕНТИ / НОМЕНКЛАТУРА',y,W,PAD);
+      let grandTotal = 0;
       elemLines.forEach(l=>{
         if(l.type==='group'){
           c.fillStyle='#4f46e5'; c.font='bold 16px Arial';
@@ -1938,11 +1976,47 @@ async function saveToPhone(){
         } else {
           const it = l.it;
           const qtyStr = (it.qty % 1 === 0) ? it.qty : it.qty.toFixed(2);
+          const price  = parseFloat(it.price)||0;
+          const lineTotal = (parseFloat(it.qty)||0) * price;
+          grandTotal += lineTotal;
+          // Назва + кількість
           c.fillStyle='#334155'; c.font='18px Arial';
-          c.fillText(`• ${it.icon} ${it.name}: ${qtyStr} ${it.unit||'шт'}`, PAD+20, y+4); y+=34;
+          const baseText = `• ${it.icon} ${it.name}: ${qtyStr} ${it.unit||'шт'}`;
+          c.fillText(baseText, PAD+20, y+4);
+          // Ціна і сума — праворуч
+          if(price > 0){
+            c.fillStyle='#64748b'; c.font='15px Arial';
+            const priceText = `₴${price.toFixed(2)}/од`;
+            c.fillText(priceText, PAD+20, y+22);
+            const totalText = lineTotal > 0 ? `= ₴${lineTotal.toFixed(2)}` : '';
+            if(totalText){
+              c.fillStyle='#15803d'; c.font='bold 15px Arial';
+              const tw = c.measureText(totalText).width;
+              c.fillText(totalText, W - PAD - tw, y+22);
+            }
+            y+=42;
+          } else {
+            y+=34;
+          }
         }
       });
-      y+=12;
+      y+=8;
+      // — Блок ДО СПЛАТИ —
+      if(grandTotal > 0){
+        const bH = 58;
+        const grad2 = c.createLinearGradient(PAD, y, W-PAD, y+bH);
+        grad2.addColorStop(0,'#1e3a8a'); grad2.addColorStop(1,'#2563eb');
+        c.fillStyle=grad2;
+        c.beginPath(); c.roundRect(PAD, y, W-PAD*2, bH, 14); c.fill();
+        c.fillStyle='rgba(255,255,255,.75)'; c.font='bold 15px Arial';
+        c.fillText('ДО СПЛАТИ', PAD+20, y+22);
+        c.fillStyle='#fff'; c.font='bold 28px Arial';
+        const totalStr='₴'+grandTotal.toFixed(2);
+        const tw2=c.measureText(totalStr).width;
+        c.fillText(totalStr, W-PAD-tw2-8, y+38);
+        y += bH + 20;
+      }
+      y+=4;
     }
 
     // — footer —
@@ -2242,7 +2316,7 @@ function loadProject(id){
     // якщо у старому проєкті їх ще не було.
     if(d.elemItems){
       elemItems = d.elemItems;
-      elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; });
+      elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; if(it.price===undefined) it.price=0; });
     }
     if(d.elemGroups) elemGroups = d.elemGroups;
     _currentProjName    = p.name    || '';
@@ -2360,6 +2434,26 @@ input.em-qty-input:focus{outline:none;border-color:#ea580c!important;background:
   border:none;transition:transform .1s;
 }
 .em-unit:active{transform:scale(.92);}
+input.em-price-input{
+  width:66px!important;flex-shrink:0;flex-grow:0;
+  font-size:12px;font-weight:700;color:#1e3a8a;text-align:center!important;
+  background:#eff6ff;border:1.5px solid #bfdbfe!important;border-radius:10px!important;
+  padding:5px 2px!important;transition:border-color .15s;
+}
+input.em-price-input:focus{outline:none;border-color:#2563eb!important;background:#fff;}
+.em-line-total{
+  font-size:12px;font-weight:800;color:#15803d;
+  background:#f0fdf4;border-radius:8px;padding:3px 6px;
+  flex-shrink:0;white-space:nowrap;min-width:52px;text-align:right;
+}
+#elemTotalBar{
+  display:none;background:linear-gradient(135deg,#1e3a8a,#2563eb);
+  border-radius:16px;margin:8px 16px 0;padding:14px 18px;
+  color:#fff;flex-shrink:0;
+}
+#elemTotalBar.visible{display:flex;align-items:center;justify-content:space-between;}
+#elemTotalLabel{font-size:13px;font-weight:700;opacity:.85;}
+#elemTotalValue{font-size:22px;font-weight:900;}
 .em-del{
   width:28px;height:28px;border-radius:8px;border:none;
   background:#fee2e2;color:#dc2626;font-size:16px;font-weight:700;
@@ -2498,6 +2592,7 @@ input.em-qty-input:focus{outline:none;border-color:#ea580c!important;background:
     </div>
 
     <!-- List -->
+    <div id="elemTotalBar"><span id="elemTotalLabel">ДО СПЛАТИ</span><span id="elemTotalValue">₴0.00</span></div>
     <div id="elemList" style="flex:1;overflow-y:auto;padding:12px 16px;"></div>
 <!-- Buttons -->
     <div style="padding:10px 16px 16px;display:flex;gap:8px;flex-shrink:0;">
@@ -2587,11 +2682,17 @@ const EMOJI_LIST = [
 // "Скинути все" не торкається elemItems/elemGroups, тож список потрібно
 // сформувати лише один раз і він залишається для всіх наступних замірів.
 const _origSaveState = saveState;
+let _nomenclatureSyncTimer = null;
 window.saveState = function(){
   localStorage.setItem('ceiling_v18', JSON.stringify({
     pts,lengths,realPts,closed,diagonals,circleMode,circleDiamCm,
     diagonalOverrides,notes,elemItems,elemGroups
   }));
+  // Дебаунс: зберігаємо номенклатуру в хмару через 2с після останньої зміни
+  clearTimeout(_nomenclatureSyncTimer);
+  _nomenclatureSyncTimer = setTimeout(()=>{
+    if(typeof saveNomenclatureToCloud === 'function') saveNomenclatureToCloud();
+  }, 2000);
 };
 const _origLoadState = loadState;
 window.loadState = function(){
@@ -2604,7 +2705,7 @@ window.loadState = function(){
     circleMode=!!d.circleMode; circleDiamCm=d.circleDiamCm||0; notes=d.notes||[];
     elemItems  = d.elemItems  || [];
     elemGroups = d.elemGroups || [];
-    elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; });
+    elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; if(it.price===undefined) it.price=0; });
     draw();
     updateElemBadge();
   }catch(e){}
@@ -2646,6 +2747,7 @@ function renderElemList(){
   }
 
   el.innerHTML = html;
+  recalcElemTotal();
 }
 
 function renderGroupCard(g, items, isUngrouped){
@@ -2688,16 +2790,32 @@ function toggleUngroupedCollapse(){
 }
 
 function renderItemRow(it){
+  const price = it.price || 0;
+  const qty   = parseFloat(it.qty) || 0;
+  const total = price * qty;
+  const totalStr = total > 0 ? '₴' + total.toFixed(2) : '';
   return `
-    <div class="em-row" id="emrow_${it.id}">
-      <div class="em-icon" onclick="openEmojiPickerForItem('${it.id}')" title="Змінити іконку">${it.icon}</div>
-      <div class="em-name" title="${it.name}">${it.name}</div>
-      <input class="em-qty-input" type="number" inputmode="decimal" step="any" placeholder="0"
-        value="${it.qty ? it.qty : ''}"
-        oninput="updateElemQty('${it.id}', this.value)">
-      <button class="em-unit" onclick="setElemFromPerimeter('${it.id}')" title="Підставити периметр">↔</button>
-      <button class="em-unit" onclick="toggleElemUnit('${it.id}')" title="Змінити одиницю">${it.unit||'шт'}</button>
-      <button class="em-edit" onclick="openEditElemModal('${it.id}')" title="Редагувати/перемістити">✏️</button>
+    <div class="em-row" id="emrow_${it.id}" style="flex-direction:column;align-items:stretch;gap:6px;padding:10px 10px 8px;">
+      <!-- Рядок 1: іконка + назва + кнопка редагування -->
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div class="em-icon" onclick="openEmojiPickerForItem('${it.id}')" title="Змінити іконку" style="flex-shrink:0;">${it.icon}</div>
+        <div class="em-name" style="flex:1;font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${it.name}">${it.name}</div>
+        <button class="em-edit" onclick="openEditElemModal('${it.id}')" title="Редагувати">✏️</button>
+      </div>
+      <!-- Рядок 2: кількість + одиниця + ціна + сума -->
+      <div style="display:flex;align-items:center;gap:5px;">
+        <input class="em-qty-input" type="number" inputmode="decimal" step="any" placeholder="0"
+          value="${it.qty ? it.qty : ''}"
+          oninput="updateElemQty('${it.id}', this.value)"
+          style="width:56px!important;">
+        <button class="em-unit" onclick="setElemFromPerimeter('${it.id}')" title="Підставити периметр" style="width:30px;font-size:13px;">↔</button>
+        <button class="em-unit" onclick="toggleElemUnit('${it.id}')" title="Змінити одиницю" style="width:34px;font-size:12px;">${it.unit||'шт'}</button>
+        <input class="em-price-input" type="number" inputmode="decimal" step="any" placeholder="₴/од"
+          value="${price > 0 ? price : ''}"
+          oninput="updateElemPrice('${it.id}', this.value)"
+          style="flex:1;min-width:0;">
+        <div class="em-line-total" id="etotal_${it.id}" style="font-size:13px;font-weight:800;color:${total>0?'#15803d':'#94a3b8'};min-width:60px;text-align:right;">${totalStr || '₴—'}</div>
+      </div>
     </div>
   `;
 }
@@ -2767,8 +2885,46 @@ function updateElemQty(id, value){
   const normalized = String(value).replace(',', '.');
   const val = parseFloat(normalized);
   it.qty = isNaN(val) ? 0 : val;
+  updateLineTotalDOM(it);
+  recalcElemTotal();
   updateElemBadge();
   saveState();
+}
+
+// ── Оновити ціну елемента ────────────────────────────
+function updateElemPrice(id, value){
+  const it = elemItems.find(x=>x.id===id);
+  if(!it) return;
+  const normalized = String(value).replace(',', '.');
+  const val = parseFloat(normalized);
+  it.price = isNaN(val) ? 0 : val;
+  updateLineTotalDOM(it);
+  recalcElemTotal();
+  saveState();
+}
+
+// ── Оновити суму рядка в DOM (без повного ре-рендеру) ─
+function updateLineTotalDOM(it){
+  const el = document.getElementById('etotal_' + it.id);
+  if(!el) return;
+  const total = (parseFloat(it.qty)||0) * (parseFloat(it.price)||0);
+  el.textContent = total > 0 ? '₴' + total.toFixed(2) : '₴—';
+}
+
+// ── Перерахувати підсумок «До сплати» ────────────────
+function recalcElemTotal(){
+  const total = elemItems.reduce((sum, it)=>{
+    return sum + (parseFloat(it.qty)||0) * (parseFloat(it.price)||0);
+  }, 0);
+  const bar = document.getElementById('elemTotalBar');
+  const val = document.getElementById('elemTotalValue');
+  if(!bar || !val) return;
+  if(total > 0){
+    val.textContent = '₴' + total.toFixed(2);
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
 }
 
 // ── Перемкнути одиницю вимірювання (шт ⇄ м) ───────────
@@ -3008,10 +3164,66 @@ function updateElemBadge(){
 const SUPABASE_URL  = 'https://twuvpnxkfmpbzoprcgyd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dXZwbnhrZm1wYnpvcHJjZ3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTA4ODAsImV4cCI6MjA5NzQ2Njg4MH0.UjdmQ2_bhwDEOpo8sCsf4kxVIwp1avrvt-xpVp6j2uk';
 
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
+let _sb = null;
 let _sbUser = null;
 let _authMode = 'login'; // 'login' | 'register'
+
+// Ця функція викликається і при старті (якщо SDK вже є в кеші),
+// і після динамічного завантаження SDK з мережі.
+window._initSupabase = function(){
+  try {
+    if(_sb) return; // вже ініціалізовано
+    _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    document.getElementById('cloudStatus').textContent = '☁️ підключення...';
+
+    _sb.auth.onAuthStateChange(async (event, session) => {
+      if(session?.user){
+        _sbUser = session.user;
+        setUserPill(_sbUser);
+        hideAuthScreen();
+        await loadProjectsFromCloud();
+      } else {
+        _sbUser = null;
+        // Показуємо екран авторизації тільки якщо сесія явно завершена
+        if(event === 'SIGNED_OUT') showAuthScreen();
+      }
+    });
+
+    // Перевіряємо сесію
+    _sb.auth.getSession().then(({ data, error }) => {
+      if(error){ console.error('SESSION ERROR:', error); showAuthScreen(); return; }
+      if(data.session?.user){
+        _sbUser = data.session.user;
+        setUserPill(_sbUser);
+        hideAuthScreen();
+        loadProjectsFromCloud();
+      } else {
+        showAuthScreen();
+      }
+    });
+
+  } catch(e) {
+    console.warn('Supabase init error:', e.message);
+    document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
+    showAuthScreen();
+  }
+};
+
+// Запускаємо відразу якщо SDK вже є (з кешу localStorage)
+if(typeof supabase !== 'undefined'){
+  window._initSupabase();
+} else {
+  // SDK ще завантажується — покажемо екран входу після невеликої затримки
+  // якщо SDK так і не з'явиться
+  setTimeout(()=>{
+    if(typeof supabase !== 'undefined'){
+      window._initSupabase();
+    } else {
+      document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
+      showAuthScreen();
+    }
+  }, 3000);
+};
 
 // ── Показати / сховати екран авторизації ──────────────
 function showAuthScreen(){ document.getElementById('authScreen').classList.remove('hidden'); }
@@ -3039,6 +3251,7 @@ async function doAuth(){
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   if(!email || !password){ setAuthError('Введіть email і пароль'); return; }
+  if(!_sb){ setAuthError('Немає підключення до сервера. Відкрийте файл у браузері з інтернетом.'); return; }
   btn.disabled = true;
   btn.textContent = '...';
   document.getElementById('authError').style.display = 'none';
@@ -3087,14 +3300,13 @@ function hideSync(){ document.getElementById('syncBadge').classList.remove('show
 
 // ── Завантажити проєкти з Supabase ────────────────────
 async function loadProjectsFromCloud(){
-  if(!_sbUser) return;
+  if(!_sbUser || !_sb) return;
   showSync('Завантаження...');
   try{
     const { data, error } = await _sb.from('projects')
       .select('*').order('created_at', { ascending: false });
     if(error) throw error;
 
-    // конвертуємо в локальний формат
     const converted = data.map(p=>({
       id: p.id,
       _dbId: p.id,
@@ -3111,14 +3323,54 @@ async function loadProjectsFromCloud(){
       state: typeof p.state === 'string' ? p.state : JSON.stringify(p.state||{})
     }));
 
-    // зберігаємо в localStorage як кеш
     localStorage.setItem('ceiling_projects', JSON.stringify(converted));
     document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
+
+    // Завантажуємо номенклатуру з хмари
+    await loadNomenclatureFromCloud();
+
   } catch(e){
     console.error('loadCloud error', e);
     document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
   }
   hideSync();
+}
+
+// ── Зберегти номенклатуру в хмару ────────────────────
+async function saveNomenclatureToCloud(){
+  if(!_sbUser || !_sb) return;
+  try{
+    const payload = { user_id: _sbUser.id, items: elemItems, groups: elemGroups };
+    // upsert — оновлює якщо є, створює якщо немає
+    const { error } = await _sb.from('nomenclature')
+      .upsert(payload, { onConflict: 'user_id' });
+    if(error) throw error;
+  } catch(e){
+    console.warn('saveNomenclature error:', e.message);
+  }
+}
+
+// ── Завантажити номенклатуру з хмари ─────────────────
+async function loadNomenclatureFromCloud(){
+  if(!_sbUser || !_sb) return;
+  try{
+    const { data, error } = await _sb.from('nomenclature')
+      .select('items, groups').eq('user_id', _sbUser.id).single();
+    if(error || !data) return; // таблиця порожня — не помилка
+    if(data.groups && Array.isArray(data.groups)) elemGroups = data.groups;
+    if(data.items  && Array.isArray(data.items)){
+      elemItems = data.items;
+      elemItems.forEach(it=>{
+        if(!it.unit) it.unit='шт';
+        if(it.groupId===undefined) it.groupId=null;
+        if(it.price===undefined) it.price=0;
+      });
+    }
+    saveState();
+    updateElemBadge();
+  } catch(e){
+    console.warn('loadNomenclature error:', e.message);
+  }
 }
 
 // ── Зберегти проєкт у Supabase (override saveProject) ─
@@ -3227,13 +3479,6 @@ window.deleteProject = async function(id, btn){
   });
 };
 
-// ── Вийти з акаунта ────────────────────────────────────
-async function signOut(){
-  await _sb.auth.signOut();
-  localStorage.removeItem('ceiling_projects');
-  showAuthScreen();
-}
-
 // ── Додати кнопку "Вийти" в модалку проєктів ──────────
 const _origOpenProjectsModal = window.openProjectsModal;
 window.openProjectsModal = function(){
@@ -3254,37 +3499,13 @@ window.openProjectsModal = function(){
   modal.classList.add('open');
 };
 
-// ── Auth state listener ────────────────────────────────
-_sb.auth.onAuthStateChange(async (event, session) => {
-  if(session?.user){
-    _sbUser = session.user;
-    setUserPill(_sbUser);
-    hideAuthScreen();
-    await loadProjectsFromCloud();
-    // якщо є локальні офлайн-проєкти — вже показуються через localStorage
-  } else {
-    _sbUser = null;
-    showAuthScreen();
-  }
-});
-
-// ── Перевірити сесію при старті ───────────────────────
-(async()=>{
-  const { data, error } = await _sb.auth.getSession();
-  if(error){
-    console.error('SESSION ERROR:', error);
-    showAuthScreen();
-    return;
-  }
-  if(data.session?.user){
-    _sbUser = data.session.user;
-    setUserPill(_sbUser);
-    hideAuthScreen();
-    await loadProjectsFromCloud();
-  } else {
-    showAuthScreen();
-  }
-})();
+// ── Вийти з акаунта ────────────────────────────────────
+async function signOut(){
+  if(_sb) await _sb.auth.signOut();
+  localStorage.removeItem('ceiling_projects');
+  _sbUser = null;
+  showAuthScreen();
+}
 </script>
 
 </html>
