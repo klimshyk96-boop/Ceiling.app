@@ -2311,14 +2311,25 @@ function loadProject(id){
     pts=d.pts||[]; lengths=d.lengths||[]; realPts=d.realPts||[];
     closed=!!d.closed; diagonals=d.diagonals||[]; diagonalOverrides=d.diagonalOverrides||{};
     circleMode=!!d.circleMode; circleDiamCm=d.circleDiamCm||0; notes=d.notes||[];
-    // Кількості елементів цього проєкту (якщо збережені разом з ним).
-    // Самі групи/назви номенклатури — спільні і не перезатираються,
-    // якщо у старому проєкті їх ще не було.
-    if(d.elemItems){
+
+    // ── Номенклатура: зберігаємо поточну структуру (групи+назви+ціни),
+    // але підставляємо кількості з проєкту за назвою елемента.
+    // Якщо поточна номенклатура порожня (новий пристрій) — беремо з проєкту повністю.
+    if(elemItems.length === 0 && d.elemItems && d.elemItems.length){
+      // Немає власної номенклатури — завантажуємо з проєкту
       elemItems = d.elemItems;
       elemItems.forEach(it=>{ if(!it.unit) it.unit='шт'; if(it.groupId===undefined) it.groupId=null; if(it.price===undefined) it.price=0; });
+      if(d.elemGroups) elemGroups = d.elemGroups;
+    } else if(elemItems.length > 0 && d.elemItems && d.elemItems.length){
+      // Є власна номенклатура — тільки підставляємо кількості за збігом назви
+      const qtyMap = {};
+      d.elemItems.forEach(it=>{ qtyMap[it.name] = it.qty || 0; });
+      elemItems.forEach(it=>{ it.qty = qtyMap[it.name] || 0; });
+    } else {
+      // Проєкт без номенклатури — обнуляємо кількості
+      elemItems.forEach(it=>{ it.qty = 0; });
     }
-    if(d.elemGroups) elemGroups = d.elemGroups;
+
     _currentProjName    = p.name    || '';
     _currentProjAddr    = p.addr    || '';
     _currentProjPhone   = p.phone   || '';
@@ -2328,7 +2339,6 @@ function loadProject(id){
     saveState();
     updateElemBadge();
 
-    // оновлюємо статистику
     const per2=lengths.reduce((a,b)=>a+(+b||0),0);
     document.getElementById('per').textContent=(per2/100).toFixed(2);
     updateCornerCount();
@@ -2577,6 +2587,9 @@ input.em-price-input:focus{outline:none;border-color:#2563eb!important;backgroun
     <div style="padding:8px 16px 0;flex-shrink:0;">
       <button type="button" onclick="fillAllMeterItemsFromPerimeter()" style="width:100%;background:linear-gradient(135deg,#10b981,#34d399);box-shadow:0 4px 14px rgba(16,185,129,.22);font-size:13px;padding:10px;border-radius:12px;">
         ↔ Заповнити всі елементи у метрах з периметра
+      </button>
+      <button type="button" onclick="forceSyncNomenclature()" style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 14px rgba(99,102,241,.22);font-size:13px;padding:10px;border-radius:12px;">
+        ☁️ Зберегти номенклатуру в хмару
       </button>
     </div>
     <div style="padding:8px 16px 0;display:flex;gap:8px;flex-shrink:0;">
@@ -3152,6 +3165,23 @@ function clearAllElems(btn){
 }
 
 // ── Бейдж на кнопці ──────────────────────────────────
+async function forceSyncNomenclature(){
+  if(!_sb || !_sbUser){
+    showToast('Немає підключення до хмари');
+    return;
+  }
+  showSync('Збереження номенклатури...');
+  try{
+    const { error } = await _sb.from('nomenclature')
+      .upsert({ user_id: _sbUser.id, items: elemItems, groups: elemGroups }, { onConflict: 'user_id' });
+    if(error) throw error;
+    showToast('✓ Номенклатуру збережено в хмару');
+  } catch(e){
+    showToast('Помилка: ' + (e.message || 'невідома'), 5000);
+  }
+  hideSync();
+}
+
 function updateElemBadge(){
   const total = elemItems.filter(it=>it.qty>0).length;
   const b = document.getElementById('elemBadge');
@@ -3381,68 +3411,62 @@ window.saveProject = async function(){
   const phone   = document.getElementById('projPhone').value.trim();
   const comment = document.getElementById('projComment').value.trim();
 
-  if(!name){
-    showToast('Введіть назву проєкту');
+  if(!name){ showToast('Введіть назву проєкту'); return; }
+
+  if(!_sb){
+    showToast('Немає підключення до хмари', 4000);
     return;
   }
-
-  // Завжди перевіряємо поточного користувача напряму перед записом.
-  // Це виправляє ситуацію, коли _sbUser ще null після відкриття сайту,
-  // хоча сесія Supabase вже є.
-  const { data: userData, error: userError } = await _sb.auth.getUser();
-
-  if(userError || !userData?.user){
-    console.error('AUTH ERROR:', userError);
-    showToast('Помилка: користувач не авторизований', 5000);
-    showAuthScreen();
-    return;
-  }
-
-  _sbUser = userData.user;
-
-  const thumb = document.getElementById('cv').toDataURL('image/jpeg', 0.35);
-
-  const areaVal = document.getElementById('area').textContent;
-  const perVal  = document.getElementById('per').textContent;
-  const inCVal  = document.getElementById('inCorners').textContent;
-  const outCVal = document.getElementById('outCorners').textContent;
-
-  const stateObj = {
-    pts, lengths, realPts, closed, diagonals,
-    circleMode, circleDiamCm, diagonalOverrides,
-    notes, elemItems, elemGroups
-  };
 
   showSync('Збереження в хмару...');
 
+  // Таймаут 10с — якщо завис, показуємо помилку
+  const timeoutId = setTimeout(()=>{
+    hideSync();
+    showToast('Таймаут: перевірте інтернет і спробуйте ще раз', 5000);
+  }, 10000);
+
   try{
+    // Беремо користувача — з кешу якщо є, або запитуємо
+    if(!_sbUser){
+      const { data: userData, error: userError } = await _sb.auth.getUser();
+      if(userError || !userData?.user){
+        clearTimeout(timeoutId); hideSync();
+        showToast('Помилка авторизації — увійдіть знову', 5000);
+        showAuthScreen(); return;
+      }
+      _sbUser = userData.user;
+    }
+
+    const thumb = document.getElementById('cv').toDataURL('image/jpeg', 0.35);
+    const areaVal = document.getElementById('area').textContent;
+    const perVal  = document.getElementById('per').textContent;
+    const inCVal  = document.getElementById('inCorners').textContent;
+    const outCVal = document.getElementById('outCorners').textContent;
+
+    const stateObj = {
+      pts, lengths, realPts, closed, diagonals,
+      circleMode, circleDiamCm, diagonalOverrides,
+      notes, elemItems, elemGroups
+    };
+
     const { data, error } = await _sb.from('projects').insert({
       user_id: _sbUser.id,
-      name: name,
-      addr: addr,
-      phone: phone,
-      comment: comment,
-      area: areaVal,
-      per: perVal,
-      in_corners: inCVal,
-      out_corners: outCVal,
-      thumb: thumb,
-      state: stateObj
+      name, addr, phone, comment,
+      area: areaVal, per: perVal,
+      in_corners: inCVal, out_corners: outCVal,
+      thumb, state: stateObj
     }).select().single();
 
+    clearTimeout(timeoutId);
     if(error) throw error;
 
     const localProj = {
-      id: data.id,
-      _dbId: data.id,
+      id: data.id, _dbId: data.id,
       name, addr, phone, comment,
-      area: areaVal,
-      per: perVal,
-      inC: inCVal,
-      outC: outCVal,
+      area: areaVal, per: perVal, inC: inCVal, outC: outCVal,
       date: data.created_at ? new Date(data.created_at).toLocaleDateString('uk-UA') : new Date().toLocaleDateString('uk-UA'),
-      thumb,
-      state: JSON.stringify(stateObj)
+      thumb, state: JSON.stringify(stateObj)
     };
 
     const projects = getProjects();
@@ -3458,9 +3482,10 @@ window.saveProject = async function(){
     document.getElementById('cloudStatus').textContent = '☁️ синхронізовано';
     showToast('✓ Збережено в хмару');
   } catch(e){
+    clearTimeout(timeoutId);
     console.error('SUPABASE SAVE ERROR:', e);
     document.getElementById('cloudStatus').textContent = '⚠️ помилка хмари';
-    showToast('Помилка Supabase: ' + (e.message || 'невідома помилка'), 7000);
+    showToast('Помилка: ' + (e.message || 'невідома помилка'), 7000);
   } finally {
     hideSync();
   }
