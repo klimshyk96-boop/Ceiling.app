@@ -285,13 +285,18 @@ body:not(.elem-manage) .em-edit{display:none!important;}
 .elem-manage .grp-edit,
 .elem-manage .em-edit{display:inline-flex!important;}
 
-/* ── Nomenclature clean header ───────────────────── */
-#elementsModal #elemTotalBar{
-  margin:12px 16px 0!important;
-  flex-shrink:0;
+/* ── Compact nomenclature action buttons ───────────── */
+#elementsModal #elemActionsPanel button{
+  min-width:0!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
 }
-#elementsModal #elemSettingsPanel button{
-  min-height:38px;
+#elementsModal #elemTotalBar{
+  margin:10px 16px 0!important;
+  flex-shrink:0!important;
 }
 
 </style>
@@ -2550,20 +2555,26 @@ input.em-price-input:focus{outline:none;border-color:#2563eb!important;backgroun
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#1e293b">📋 Номенклатура</h3>
         <div style="display:flex;gap:6px;align-items:center">
-          <button type="button" onclick="toggleElemSettingsPanel()" title="Меню" style="background:#f1f5f9;box-shadow:none;color:#64748b;font-size:14px;padding:8px 10px;border-radius:10px;line-height:1;">⚙️</button>
+          <button type="button" onclick="toggleElemActions()" title="Дії" style="background:#f1f5f9;box-shadow:none;color:#64748b;font-size:14px;padding:8px 10px;border-radius:10px;line-height:1;">⚙️</button>
           <button onclick="closeModal('elementsModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:24px;padding:2px 6px;line-height:1;">×</button>
         </div>
       </div>
       <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Групи зберігаються • кількість очищається для нового проєкту • ↔ бере метри з периметра</div>
     </div>
-    <div id="elemSettingsPanel" style="display:none;padding:8px 16px 0;flex-shrink:0;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button type="button" onclick="forceSyncNomenclature()" style="background:#eef2ff;box-shadow:none;color:#4f46e5;font-size:12px;padding:9px;border-radius:12px;">☁️ Хмара</button>
-        <button type="button" onclick="toggleAddGroupPanel()" style="background:#eff6ff;box-shadow:none;color:#2563eb;font-size:12px;padding:9px;border-radius:12px;">+ Група</button>
-        <button type="button" onclick="fillAllMeterItemsFromPerimeter()" style="background:#ecfdf5;box-shadow:none;color:#059669;font-size:12px;padding:9px;border-radius:12px;">↔ Метри</button>
-        <button type="button" onclick="clearElemQuantities()" style="background:#fff7ed;box-shadow:none;color:#ea580c;font-size:12px;padding:9px;border-radius:12px;">🧹 К-сть</button>
-        <button type="button" onclick="toggleElemManageMode()" style="background:#f8fafc;box-shadow:none;color:#475569;font-size:12px;padding:9px;border-radius:12px;">✏️ Редагувати</button>
-        <button type="button" onclick="clearAllElems(this)" style="background:#fef2f2;box-shadow:none;color:#dc2626;font-size:12px;padding:9px;border-radius:12px;">🗑️ Все</button>
+    <div id="elemActionsPanel" style="display:none;padding:8px 16px 0;flex-shrink:0;">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
+        <button type="button" onclick="forceSyncNomenclature()" title="Зберегти в хмару"
+          style="height:40px;background:#eef2ff;box-shadow:none;color:#4f46e5;font-size:18px;padding:0;border-radius:12px;">☁️</button>
+        <button type="button" onclick="toggleAddGroupPanel()" title="Додати групу"
+          style="height:40px;background:#eff6ff;box-shadow:none;color:#2563eb;font-size:22px;padding:0;border-radius:12px;">+</button>
+        <button type="button" onclick="fillAllMeterItemsFromPerimeter()" title="Метри з периметра"
+          style="height:40px;background:#ecfdf5;box-shadow:none;color:#059669;font-size:18px;padding:0;border-radius:12px;">↔</button>
+        <button type="button" onclick="clearElemQuantities()" title="Очистити кількість"
+          style="height:40px;background:#fff7ed;box-shadow:none;color:#ea580c;font-size:18px;padding:0;border-radius:12px;">🧹</button>
+        <button type="button" onclick="toggleElemManageMode()" title="Редагувати"
+          style="height:40px;background:#f8fafc;box-shadow:none;color:#475569;font-size:18px;padding:0;border-radius:12px;">✏️</button>
+        <button type="button" onclick="clearAllElems(this)" title="Очистити все"
+          style="height:40px;background:#fef2f2;box-shadow:none;color:#dc2626;font-size:18px;padding:0;border-radius:12px;">🗑️</button>
       </div>
     </div>
 
@@ -2805,8 +2816,8 @@ function renderItemRow(it){
 // ── Групи ──────────────────────────────────────────
 
 
-function toggleElemSettingsPanel(){
-  const p = document.getElementById('elemSettingsPanel');
+function toggleElemActions(){
+  const p = document.getElementById('elemActionsPanel');
   if(!p) return;
   p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none';
 }
@@ -3182,8 +3193,18 @@ window._initSupabase = function(){
     _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     document.getElementById('cloudStatus').textContent = '☁️ підключення...';
 
+    // iPhone/Safari fix: якщо відновлення сесії зависло — показати вхід, а не вічне завантаження
+    const authStartupGuard = setTimeout(()=>{
+      if(!_sbUser){
+        hideSync();
+        document.getElementById('cloudStatus').textContent = '⚠️ потрібен вхід';
+        showAuthScreen();
+      }
+    }, 8000);
+
     _sb.auth.onAuthStateChange(async (event, session) => {
       if(session?.user){
+        clearTimeout(authStartupGuard);
         _sbUser = session.user;
         setUserPill(_sbUser);
         hideAuthScreen();
@@ -3206,14 +3227,18 @@ window._initSupabase = function(){
         if(error) throw error;
 
         if(data.session?.user){
+          clearTimeout(authStartupGuard);
           _sbUser = data.session.user;
           setUserPill(_sbUser);
           hideAuthScreen();
           await loadProjectsFromCloud();
         } else {
+          clearTimeout(authStartupGuard);
+          hideSync();
           showAuthScreen();
         }
       } catch(e){
+        clearTimeout(authStartupGuard);
         console.error('SESSION ERROR:', e);
         document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
         hideSync();
@@ -3245,6 +3270,22 @@ if(typeof supabase !== 'undefined'){
 };
 
 // ── Показати / сховати екран авторизації ──────────────
+
+async function resetBrokenSession(){
+  try{
+    localStorage.removeItem('supabase.auth.token');
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && (k.includes('supabase') || k.includes('sb-'))) keys.push(k);
+    }
+    keys.forEach(k=>localStorage.removeItem(k));
+    if(_sb) await _sb.auth.signOut();
+  }catch(e){}
+  hideSync();
+  showAuthScreen();
+}
+
 function showAuthScreen(){ document.getElementById('authScreen').classList.remove('hidden'); }
 function hideAuthScreen(){ document.getElementById('authScreen').classList.add('hidden'); }
 
@@ -3310,12 +3351,26 @@ function setUserPill(user){
 }
 
 // ── Sync badge ─────────────────────────────────────────
+let _syncWatchdog = null;
+
 function showSync(text){
   const b = document.getElementById('syncBadge');
   document.getElementById('syncText').textContent = text;
   b.classList.add('show');
+
+  // iPhone/Safari fix: бейдж не може крутитися вічно
+  clearTimeout(_syncWatchdog);
+  _syncWatchdog = setTimeout(()=>{
+    hideSync();
+    document.getElementById('cloudStatus').textContent = '⚠️ офлайн';
+  }, 15000);
 }
-function hideSync(){ document.getElementById('syncBadge').classList.remove('show'); }
+
+function hideSync(){
+  clearTimeout(_syncWatchdog);
+  const b = document.getElementById('syncBadge');
+  if(b) b.classList.remove('show');
+}
 
 // ── Завантажити проєкти з Supabase ────────────────────
 let _cloudLoadPromise = null;
