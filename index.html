@@ -2702,10 +2702,9 @@ window.saveState = function(){
     diagonalOverrides,notes,elemItems,elemGroups
   }));
   // Дебаунс: зберігаємо номенклатуру в хмару через 2с після останньої зміни
-  clearTimeout(_nomenclatureSyncTimer);
-  _nomenclatureSyncTimer = setTimeout(()=>{
-    if(typeof saveNomenclatureToCloud === 'function') saveNomenclatureToCloud();
-  }, 2000);
+  if(typeof saveNomenclatureToCloud === 'function'){
+    saveNomenclatureToCloud();
+  }
 };
 const _origLoadState = loadState;
 window.loadState = function(){
