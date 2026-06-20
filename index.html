@@ -19,6 +19,18 @@
   &quot;orientation&quot;:&quot;portrait&quot;,
   &quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%232563eb'/%3E%3Crect x='32' y='32' width='128' height='128' rx='12' fill='none' stroke='white' stroke-width='12'/%3E%3Cline x1='32' y1='96' x2='160' y2='96' stroke='white' stroke-width='10'/%3E%3Cline x1='96' y1='32' x2='96' y2='160' stroke='white' stroke-width='10'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <title>Конструктор натяжної стелі v30 — компактні елементи</title>
+<script>
+
+// Примусове очищення битої сесії: додайте до адреси ?logout=1
+if(new URLSearchParams(location.search).get('logout') === '1'){
+  try{
+    localStorage.clear();
+    sessionStorage.clear();
+  }catch(e){}
+  location.href = location.pathname;
+}
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ── AUTH SCREEN ─────────────────────────────────── */
@@ -284,21 +296,6 @@ body:not(.elem-manage) .em-edit{display:none!important;}
 .elem-manage .em-del,
 .elem-manage .grp-edit,
 .elem-manage .em-edit{display:inline-flex!important;}
-
-/* ── Compact nomenclature action buttons ───────────── */
-#elementsModal #elemActionsPanel button{
-  min-width:0!important;
-  width:100%!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  line-height:1!important;
-}
-#elementsModal #elemTotalBar{
-  margin:10px 16px 0!important;
-  flex-shrink:0!important;
-}
-
 </style>
 
 </head>
@@ -2555,29 +2552,26 @@ input.em-price-input:focus{outline:none;border-color:#2563eb!important;backgroun
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#1e293b">📋 Номенклатура</h3>
         <div style="display:flex;gap:6px;align-items:center">
-          <button type="button" onclick="toggleElemActions()" title="Дії" style="background:#f1f5f9;box-shadow:none;color:#64748b;font-size:14px;padding:8px 10px;border-radius:10px;line-height:1;">⚙️</button>
+          <button type="button" onclick="toggleElemManageMode()" title="Керування" style="background:#f1f5f9;box-shadow:none;color:#64748b;font-size:14px;padding:8px 10px;border-radius:10px;line-height:1;">⚙️</button>
           <button onclick="closeModal('elementsModal')" style="background:none;box-shadow:none;color:#94a3b8;font-size:24px;padding:2px 6px;line-height:1;">×</button>
         </div>
       </div>
       <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Групи зберігаються • кількість очищається для нового проєкту • ↔ бере метри з периметра</div>
     </div>
-    <div id="elemActionsPanel" style="display:none;padding:8px 16px 0;flex-shrink:0;">
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
-        <button type="button" onclick="forceSyncNomenclature()" title="Зберегти в хмару"
-          style="height:40px;background:#eef2ff;box-shadow:none;color:#4f46e5;font-size:18px;padding:0;border-radius:12px;">☁️</button>
-        <button type="button" onclick="toggleAddGroupPanel()" title="Додати групу"
-          style="height:40px;background:#eff6ff;box-shadow:none;color:#2563eb;font-size:22px;padding:0;border-radius:12px;">+</button>
-        <button type="button" onclick="fillAllMeterItemsFromPerimeter()" title="Метри з периметра"
-          style="height:40px;background:#ecfdf5;box-shadow:none;color:#059669;font-size:18px;padding:0;border-radius:12px;">↔</button>
-        <button type="button" onclick="clearElemQuantities()" title="Очистити кількість"
-          style="height:40px;background:#fff7ed;box-shadow:none;color:#ea580c;font-size:18px;padding:0;border-radius:12px;">🧹</button>
-        <button type="button" onclick="toggleElemManageMode()" title="Редагувати"
-          style="height:40px;background:#f8fafc;box-shadow:none;color:#475569;font-size:18px;padding:0;border-radius:12px;">✏️</button>
-        <button type="button" onclick="clearAllElems(this)" title="Очистити все"
-          style="height:40px;background:#fef2f2;box-shadow:none;color:#dc2626;font-size:18px;padding:0;border-radius:12px;">🗑️</button>
-      </div>
-    </div>
 
+    <div style="padding:8px 16px 0;flex-shrink:0;">
+      <button type="button" onclick="fillAllMeterItemsFromPerimeter()" style="width:100%;background:linear-gradient(135deg,#10b981,#34d399);box-shadow:0 4px 14px rgba(16,185,129,.22);font-size:13px;padding:10px;border-radius:12px;">
+        ↔ Заповнити всі елементи у метрах з периметра
+      </button>
+      <button type="button" onclick="forceSyncNomenclature()" style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 14px rgba(99,102,241,.22);font-size:13px;padding:10px;border-radius:12px;">
+        ☁️ Зберегти номенклатуру в хмару
+      </button>
+    </div>
+    <div style="padding:8px 16px 0;display:flex;gap:8px;flex-shrink:0;">
+      <button type="button" id="compactAddGroupBtn" onclick="toggleAddGroupPanel()" style="width:100%;background:linear-gradient(135deg,#2563eb,#6366f1);box-shadow:0 4px 14px rgba(37,99,235,.22);font-size:13px;padding:10px;border-radius:12px;">
+        + Група
+      </button>
+    </div>
     <div id="addGroupPanel" style="display:none;padding:8px 16px 0;flex-shrink:0;">
       <div class="em-add-row">
         <input class="em-add-name" id="newGroupName" placeholder="Назва групи…" onkeydown="if(event.key==='Enter')addGroup()">
@@ -2814,13 +2808,6 @@ function renderItemRow(it){
 }
 
 // ── Групи ──────────────────────────────────────────
-
-
-function toggleElemActions(){
-  const p = document.getElementById('elemActionsPanel');
-  if(!p) return;
-  p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none';
-}
 
 function toggleAddGroupPanel(){
   const p = document.getElementById('addGroupPanel');
@@ -3227,8 +3214,24 @@ window._initSupabase = function(){
         if(error) throw error;
 
         if(data.session?.user){
+          // GitHub Pages fix: getSession() може взяти старий токен з localStorage.
+          // Перевіряємо користувача реально через Supabase.
+          const { data: userData, error: userError } = await withTimeout(
+            _sb.auth.getUser(),
+            8000,
+            'Перевірка авторизації'
+          );
+
+          if(userError || !userData?.user){
+            await resetBrokenSession();
+            clearTimeout(authStartupGuard);
+            hideSync();
+            showAuthScreen();
+            return;
+          }
+
           clearTimeout(authStartupGuard);
-          _sbUser = data.session.user;
+          _sbUser = userData.user;
           setUserPill(_sbUser);
           hideAuthScreen();
           await loadProjectsFromCloud();
